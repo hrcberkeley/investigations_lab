@@ -1,0 +1,1457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HRC Transcribe — In-Browser Speech Recognition</title>
+    <meta name="description" content="HRC Transcribe: In-browser AI-powered speech recognition. Your files never leave your device.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ── Design Tokens — UC Berkeley Palette ─────────────────── */
+        :root {
+            --berkeley-blue:     #003262;
+            --berkeley-blue-mid: #044e8e;
+            --berkeley-blue-lt:  #0a6ab5;
+            --cal-gold:          #FDB515;
+            --cal-gold-dark:     #d99a00;
+            --founders-rock:     #3B7EA1;
+            --medalist:          #C4820A;
+            --web-grey:          #888b8d;
+
+            /* Surface layers */
+            --bg:        #01213d;
+            --surface-1: rgba(255,255,255,0.06);
+            --surface-2: rgba(255,255,255,0.10);
+            --surface-3: rgba(255,255,255,0.15);
+            --border:    rgba(255,255,255,0.12);
+            --border-hi: rgba(253,181,21,0.4);
+
+            /* Text */
+            --text-primary:   #f0f4f8;
+            --text-secondary: rgba(240,244,248,0.7);
+            --text-muted:     rgba(240,244,248,0.45);
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            background-image:
+                radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,50,98,0.9) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 90% 80%, rgba(59,126,161,0.15) 0%, transparent 60%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ── Scrollbar ───────────────────────────────────────────── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(253,181,21,0.3); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(253,181,21,0.5); }
+
+        /* ── Header ──────────────────────────────────────────────── */
+        .app-header {
+            background: rgba(0,50,98,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-logo {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, var(--cal-gold), var(--medalist));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(253,181,21,0.35);
+        }
+        .header-logo svg { color: var(--berkeley-blue); }
+        .header-wordmark {
+            display: flex;
+            flex-direction: column;
+        }
+        .app-header h1 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--text-primary);
+            line-height: 1.2;
+        }
+        .app-header h1 span { color: var(--cal-gold); }
+        .app-header p  {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 1px;
+        }
+        .header-badge {
+            margin-left: auto;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--cal-gold);
+            background: rgba(253,181,21,0.12);
+            border: 1px solid rgba(253,181,21,0.25);
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+
+        /* ── Layout ──────────────────────────────────────────────── */
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 14px;
+            padding: 16px;
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+        @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+        .left-col  { display: flex; flex-direction: column; gap: 12px; }
+        .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+        /* ── Cards — glassmorphism ────────────────────────────────── */
+        .card {
+            background: var(--surface-1);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 14px;
+            padding: 16px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: rgba(255,255,255,0.18); }
+
+        /* ── Section labels ──────────────────────────────────────── */
+        .section-label {
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--cal-gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, rgba(253,181,21,0.3), transparent);
+        }
+
+        /* ── Form fields ─────────────────────────────────────────── */
+        .field { margin-bottom: 14px; }
+        .field:last-of-type { margin-bottom: 0; }
+
+        .field-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+        .field-label svg { color: var(--cal-gold); opacity: 0.8; }
+
+        .field-hint { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+
+        select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-family: 'Inter', sans-serif;
+            background: var(--surface-2);
+            color: var(--text-primary);
+            cursor: pointer;
+            appearance: auto;
+            transition: border-color 0.18s, box-shadow 0.18s;
+        }
+        select:focus {
+            outline: none;
+            border-color: var(--cal-gold);
+            box-shadow: 0 0 0 3px rgba(253,181,21,0.18);
+        }
+        select option, select optgroup {
+            background: #01335a;
+            color: var(--text-primary);
+        }
+        optgroup { font-weight: 700; }
+
+        /* ── Upload ──────────────────────────────────────────────── */
+        #uploadSection {
+            border: 2px dashed rgba(255,255,255,0.2);
+            border-radius: 11px;
+            padding: 30px 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s, transform 0.15s;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        #uploadSection::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse at center, rgba(253,181,21,0.04) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        #uploadSection:hover::before, #uploadSection.dragover::before { opacity: 1; }
+        #uploadSection:hover, #uploadSection.dragover {
+            border-color: var(--cal-gold);
+            background: rgba(253,181,21,0.05);
+            transform: translateY(-1px);
+        }
+        .upload-icon  {
+            color: var(--cal-gold);
+            opacity: 0.7;
+            margin: 0 auto 10px;
+            display: block;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        #uploadSection:hover .upload-icon { transform: translateY(-3px); opacity: 1; }
+        .upload-text  { font-weight: 700; font-size: 0.88rem; color: var(--text-primary); }
+        .upload-sub   { font-size: 0.73rem; color: var(--text-muted); margin-top: 4px; }
+
+        /* ── Selected file ───────────────────────────────────────── */
+        #selectedFile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: rgba(59,126,161,0.12);
+            border: 1px solid rgba(59,126,161,0.3);
+            border-radius: 9px;
+            margin-bottom: 12px;
+        }
+        .file-icon  { color: var(--founders-rock); flex-shrink: 0; }
+        .file-info  { flex: 1; min-width: 0; }
+        .file-name  { font-weight: 600; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+        .file-size  { font-size: 0.72rem; color: var(--text-muted); }
+        #removeFile {
+            background: none; border: none; cursor: pointer;
+            color: var(--text-muted); padding: 3px; border-radius: 5px; display: flex;
+            transition: color 0.15s, background 0.15s;
+        }
+        #removeFile:hover { color: #f87171; background: rgba(248,113,113,0.1); }
+
+        /* ── Transcribe button ───────────────────────────────────── */
+        #transcribeBtn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, var(--cal-gold), var(--medalist));
+            color: var(--berkeley-blue);
+            border: none;
+            border-radius: 10px;
+            font-size: 0.93rem;
+            font-weight: 800;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+            box-shadow: 0 4px 16px rgba(253,181,21,0.35);
+            letter-spacing: -0.01em;
+        }
+        #transcribeBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(253,181,21,0.45);
+        }
+        #transcribeBtn:active:not(:disabled) { transform: translateY(0); }
+        #transcribeBtn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+
+        /* ── Status badges ───────────────────────────────────────── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 999px;
+            letter-spacing: 0.01em;
+        }
+        .badge-green  {
+            background: rgba(52,211,153,0.12);
+            color: #6ee7b7;
+            border: 1px solid rgba(52,211,153,0.25);
+        }
+        .badge-blue   {
+            background: rgba(59,126,161,0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(59,126,161,0.3);
+        }
+        .badge-yellow {
+            background: rgba(253,181,21,0.12);
+            color: var(--cal-gold);
+            border: 1px solid rgba(253,181,21,0.25);
+        }
+
+        /* Pulsing dot for active states */
+        .badge-blue .pulse-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #93c5fd;
+            animation: pulse-dot 1.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.7); }
+        }
+
+        .status-col { display: flex; flex-direction: column; gap: 6px; }
+
+        /* ── Progress ────────────────────────────────────────────── */
+        #progressSection { margin-top: 14px; }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        #progressTitle       { font-size: 0.83rem; font-weight: 600; color: var(--text-secondary); }
+        #progressPercentage  { font-size: 0.8rem; font-weight: 700; color: var(--cal-gold); }
+
+        .progress-track {
+            height: 6px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+        #progressBar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--cal-gold), var(--medalist));
+            border-radius: 999px;
+            width: 0%;
+            transition: width 0.3s ease;
+            box-shadow: 0 0 8px rgba(253,181,21,0.5);
+        }
+        #progressBar.indeterminate {
+            width: 38% !important;
+            animation: indeterminate 1.4s ease-in-out infinite;
+        }
+        @keyframes indeterminate {
+            0%   { margin-left: -38%; }
+            100% { margin-left: 100%; }
+        }
+
+        #progressStatus {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            min-height: 1.1em;
+        }
+
+        /* Live text preview while chunks arrive */
+        #livePreview {
+            margin-top: 8px;
+            padding: 8px 10px;
+            background: rgba(59,126,161,0.08);
+            border: 1px solid rgba(59,126,161,0.2);
+            border-radius: 7px;
+            font-size: 0.77rem;
+            color: var(--text-muted);
+            font-style: italic;
+            line-height: 1.6;
+            max-height: 54px;
+            overflow: hidden;
+            direction: auto;
+        }
+
+        /* ── Video player ────────────────────────────────────────── */
+        #videoPlayerSection {
+            border-radius: 14px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid var(--border);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        #videoPlayer { width: 100%; display: block; max-height: 420px; }
+
+        .video-bar {
+            background: rgba(0,30,60,0.8);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--border);
+        }
+        #videoPlayerTitle { font-size: 0.8rem; color: var(--text-secondary); font-weight: 500; }
+        #subtitleToggle {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 11px;
+            border-radius: 6px;
+            font-size: 0.73rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--surface-2);
+            color: var(--text-secondary);
+            transition: background 0.18s, border-color 0.18s, color 0.18s;
+        }
+        #subtitleToggle.active {
+            background: rgba(253,181,21,0.15);
+            border-color: rgba(253,181,21,0.4);
+            color: var(--cal-gold);
+        }
+
+        /* ── Result section ──────────────────────────────────────── */
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .result-title   { font-size: 0.95rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+        .result-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+        .btn-action {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--surface-2);
+            font-size: 0.77rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+        }
+        .btn-action:hover {
+            background: var(--surface-3);
+            border-color: rgba(253,181,21,0.35);
+            color: var(--cal-gold);
+            transform: translateY(-1px);
+        }
+        .btn-action:active { transform: translateY(0); }
+
+        #resultContent {
+            min-height: 140px;
+            max-height: 580px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.85;
+            color: var(--text-secondary);
+            direction: auto;
+        }
+        #resultContent.timestamps-view .chunk {
+            display: block;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        #resultContent.timestamps-view .chunk:last-child { border-bottom: none; }
+        #resultContent.word-level { word-spacing: 2px; }
+
+        .timestamp {
+            color: var(--founders-rock);
+            font-size: 0.76em;
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            margin-right: 6px;
+            user-select: none;
+            opacity: 0.9;
+        }
+
+        /* ── Utilities ───────────────────────────────────────────── */
+        .hidden { display: none !important; }
+
+        /* ── Fade-in animation for result cards ──────────────────── */
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .card-reveal { animation: fadeSlideUp 0.3s ease forwards; }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <div class="header-logo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+    </div>
+    <div class="header-wordmark">
+        <h1>HRC <span>Transcribe</span></h1>
+        <p>In-browser AI speech recognition — your files never leave your device</p>
+    </div>
+    <span class="header-badge">UC Berkeley</span>
+</header>
+
+<div class="layout">
+
+    <!-- ── Left column ─────────────────────────────────────────── -->
+    <div class="left-col">
+
+        <!-- Settings -->
+        <div class="card">
+            <div class="section-label">Settings</div>
+            <div class="field">
+                <label class="field-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    Language
+                </label>
+                <select id="languageSelect">
+                    <option value="auto">Auto-detect</option>
+                    <optgroup label="Common Languages">
+                        <option value="english">English</option>
+                        <option value="spanish">Spanish</option>
+                        <option value="french">French</option>
+                        <option value="german">German</option>
+                        <option value="italian">Italian</option>
+                        <option value="portuguese">Portuguese</option>
+                        <option value="russian">Russian</option>
+                        <option value="chinese">Chinese</option>
+                        <option value="japanese">Japanese</option>
+                        <option value="korean">Korean</option>
+                        <option value="arabic">Arabic</option>
+                        <option value="hindi">Hindi</option>
+                    </optgroup>
+                    <optgroup label="All Languages (A–Z)">
+                        <option value="afrikaans">Afrikaans</option>
+                        <option value="amharic">Amharic</option>
+                        <option value="azerbaijani">Azerbaijani</option>
+                        <option value="belarusian">Belarusian</option>
+                        <option value="bulgarian">Bulgarian</option>
+                        <option value="bengali">Bengali</option>
+                        <option value="catalan">Catalan</option>
+                        <option value="czech">Czech</option>
+                        <option value="danish">Danish</option>
+                        <option value="greek">Greek</option>
+                        <option value="estonian">Estonian</option>
+                        <option value="basque">Basque</option>
+                        <option value="persian">Persian</option>
+                        <option value="finnish">Finnish</option>
+                        <option value="galician">Galician</option>
+                        <option value="gujarati">Gujarati</option>
+                        <option value="hebrew">Hebrew</option>
+                        <option value="croatian">Croatian</option>
+                        <option value="hungarian">Hungarian</option>
+                        <option value="armenian">Armenian</option>
+                        <option value="indonesian">Indonesian</option>
+                        <option value="icelandic">Icelandic</option>
+                        <option value="javanese">Javanese</option>
+                        <option value="georgian">Georgian</option>
+                        <option value="kazakh">Kazakh</option>
+                        <option value="khmer">Khmer</option>
+                        <option value="kannada">Kannada</option>
+                        <option value="latin">Latin</option>
+                        <option value="lingala">Lingala</option>
+                        <option value="lao">Lao</option>
+                        <option value="lithuanian">Lithuanian</option>
+                        <option value="latvian">Latvian</option>
+                        <option value="macedonian">Macedonian</option>
+                        <option value="malayalam">Malayalam</option>
+                        <option value="mongolian">Mongolian</option>
+                        <option value="marathi">Marathi</option>
+                        <option value="malay">Malay</option>
+                        <option value="maltese">Maltese</option>
+                        <option value="nepali">Nepali</option>
+                        <option value="dutch">Dutch</option>
+                        <option value="norwegian">Norwegian</option>
+                        <option value="punjabi">Punjabi</option>
+                        <option value="polish">Polish</option>
+                        <option value="pashto">Pashto</option>
+                        <option value="romanian">Romanian</option>
+                        <option value="sindhi">Sindhi</option>
+                        <option value="sinhala">Sinhala</option>
+                        <option value="slovak">Slovak</option>
+                        <option value="slovenian">Slovenian</option>
+                        <option value="somali">Somali</option>
+                        <option value="albanian">Albanian</option>
+                        <option value="serbian">Serbian</option>
+                        <option value="swedish">Swedish</option>
+                        <option value="swahili">Swahili</option>
+                        <option value="tamil">Tamil</option>
+                        <option value="telugu">Telugu</option>
+                        <option value="thai">Thai</option>
+                        <option value="turkish">Turkish</option>
+                        <option value="ukrainian">Ukrainian</option>
+                        <option value="urdu">Urdu</option>
+                        <option value="uzbek">Uzbek</option>
+                        <option value="vietnamese">Vietnamese</option>
+                        <option value="yiddish">Yiddish</option>
+                        <option value="yoruba">Yoruba</option>
+                        <option value="cantonese">Cantonese</option>
+                    </optgroup>
+                </select>
+                <p class="field-hint">Specify language for better accuracy</p>
+            </div>
+
+            <div class="field">
+                <label class="field-label">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Timestamps
+                </label>
+                <select id="timestampSelect">
+                    <option value="none">No timestamps</option>
+                    <option value="chunk">Chunk timestamps</option>
+                    <option value="word">Word-level timestamps</option>
+                </select>
+                <p class="field-hint">Word-level is slower but more precise</p>
+            </div>
+        </div>
+
+        <!-- File upload -->
+        <div class="card" style="padding-bottom: 14px;">
+            <div class="section-label">Audio / Video File</div>
+            <div id="uploadSection">
+                <svg class="upload-icon" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                <p class="upload-text">Drop your audio file here</p>
+                <p class="upload-sub">or click to browse &bull; MP3, WAV, M4A, FLAC, OGG, WebM, MP4</p>
+                <input type="file" id="fileInput" accept="audio/*,video/*" style="display:none">
+            </div>
+
+            <div id="selectedFile" class="hidden">
+                <svg class="file-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+                </svg>
+                <div class="file-info">
+                    <div class="file-name" id="fileName"></div>
+                    <div class="file-size" id="fileSize"></div>
+                </div>
+                <button id="removeFile" title="Remove file">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <button id="transcribeBtn" disabled>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5 3 19 12 5 21 5 3"/>
+                </svg>
+                Transcribe (can take a while)
+            </button>
+        </div>
+
+        <!-- Status + progress -->
+        <div class="card" id="statusCard">
+            <div class="section-label">Status</div>
+            <div class="status-col">
+                <div id="deviceStatus">
+                    <span class="badge badge-blue">Checking GPU…</span>
+                </div>
+                <div id="workerStatus">
+                    <span class="badge badge-blue">Initializing…</span>
+                </div>
+            </div>
+
+            <div id="progressSection" class="hidden">
+                <div class="progress-header">
+                    <span id="progressTitle">Loading…</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="progress-track">
+                    <div id="progressBar"></div>
+                </div>
+                <div id="progressStatus">Initializing…</div>
+                <div id="livePreview" class="hidden"></div>
+            </div>
+        </div>
+
+    </div><!-- /left-col -->
+
+    <!-- ── Right column ─────────────────────────────────────────── -->
+    <div class="right-col">
+
+        <!-- Video player -->
+        <div id="videoPlayerSection" class="hidden">
+            <video id="videoPlayer" controls>
+                <track id="subtitleTrack" kind="subtitles" default>
+                Your browser does not support the video tag.
+            </video>
+            <div class="video-bar">
+                <span id="videoPlayerTitle">Video Preview</span>
+                <button id="subtitleToggle" class="hidden active">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Subtitles: ON
+                </button>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="resultSection" class="card hidden">
+            <div class="result-header">
+                <h2 class="result-title">Transcription Result
+                    <span style="font-size:0.65rem; font-weight:600; color:var(--cal-gold); background:rgba(253,181,21,0.1); border:1px solid rgba(253,181,21,0.2); padding:2px 8px; border-radius:999px; margin-left:8px; vertical-align: middle; letter-spacing:0.05em; text-transform:uppercase;">Done</span>
+                </h2>
+                <div class="result-actions">
+                    <button class="btn-action" id="copyBtn">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                    <button class="btn-action" id="downloadBtn">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download TXT
+                    </button>
+                    <button class="btn-action" id="exportSrtBtn" style="display:none;">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        Export SRT
+                    </button>
+                </div>
+            </div>
+            <div id="resultContent"></div>
+        </div>
+
+    </div><!-- /right-col -->
+</div><!-- /layout -->
+
+<script type="module">
+import { canStream, streamAudioWindows } from './audio-extractor.js';
+
+// ─────────────────────────────────────────────────────────────────────────
+// DOM refs
+// ─────────────────────────────────────────────────────────────────────────
+const $  = (id) => document.getElementById(id);
+const uploadSection     = $('uploadSection');
+const fileInput         = $('fileInput');
+const selectedFileEl    = $('selectedFile');
+const fileNameEl        = $('fileName');
+const fileSizeEl        = $('fileSize');
+const removeFileBtn     = $('removeFile');
+const transcribeBtn     = $('transcribeBtn');
+const progressSection   = $('progressSection');
+const progressTitle     = $('progressTitle');
+const progressBar       = $('progressBar');
+const progressPct       = $('progressPercentage');
+const progressStatus    = $('progressStatus');
+const livePreview       = $('livePreview');
+const videoSection      = $('videoPlayerSection');
+const videoPlayer       = $('videoPlayer');
+const videoPlayerTitle  = $('videoPlayerTitle');
+const subtitleTrack     = $('subtitleTrack');
+const subtitleToggle    = $('subtitleToggle');
+const resultSection     = $('resultSection');
+const resultContent     = $('resultContent');
+const copyBtn           = $('copyBtn');
+const downloadBtn       = $('downloadBtn');
+const exportSrtBtn      = $('exportSrtBtn');
+const languageSelect    = $('languageSelect');
+const timestampSelect   = $('timestampSelect');
+const deviceStatusEl    = $('deviceStatus');
+const workerStatusEl    = $('workerStatus');
+
+const MODEL_ID = 'onnx-community/whisper-large-v3-turbo';
+
+// ─────────────────────────────────────────────────────────────────────────
+// App state
+// ─────────────────────────────────────────────────────────────────────────
+let selectedFile  = null;
+let isProcessing  = false;
+let lastResult    = null;
+let lastTsMode    = 'none';
+let videoURL      = null;
+let chunkTexts    = [];
+
+// ─────────────────────────────────────────────────────────────────────────
+// Transcriber — wraps a Web Worker with a clean Promise API.
+// Falls back to running on the main thread if module Workers aren't
+// supported (Firefox < 114, some older Chromium builds).
+// ─────────────────────────────────────────────────────────────────────────
+class Transcriber {
+    constructor() {
+        this._worker      = null;
+        this._usingWorker = false;
+        this._pipeline    = null;   // main-thread pipeline instance
+        this._loadedModel = null;   // model currently loaded on main thread
+
+        // Callbacks for streaming events
+        this._onProgress = null;
+        this._onChunk    = null;
+
+        // Pending Promise controls for in-flight operations
+        this._loadRes = null;
+        this._loadRej = null;
+        this._runRes  = null;
+        this._runRej  = null;
+    }
+
+    onProgress(fn) { this._onProgress = fn; }
+    onChunk(fn)    { this._onChunk    = fn; }
+
+    /**
+     * Attempt to start a module Worker. On failure, silently fall back
+     * to the main thread. Call this once on page load.
+     */
+    async init() {
+        try {
+            const w = new Worker('./transcriber-worker.js', { type: 'module' });
+
+            // Handshake: confirm the worker script loaded and responded.
+            await new Promise((resolve, reject) => {
+                const timer = setTimeout(
+                    () => reject(new Error('Worker handshake timed out')),
+                    6000
+                );
+                w.onmessage = ({ data }) => {
+                    if (data.type === 'pong') { clearTimeout(timer); resolve(); }
+                };
+                w.onerror = (e) => { clearTimeout(timer); reject(e); };
+                w.postMessage({ type: 'ping' });
+            });
+
+            // Handshake succeeded — switch to the live message handler.
+            w.onmessage = ({ data }) => this._handleWorkerMsg(data);
+            w.onerror   = ({ message }) => this._reject(new Error(message));
+
+            this._worker      = w;
+            this._usingWorker = true;
+            workerStatusEl.innerHTML = badge('green', 'Web Worker active — UI stays responsive');
+        } catch (_) {
+            this._usingWorker = false;
+            workerStatusEl.innerHTML = badge('yellow', 'Main thread mode — UI may freeze briefly');
+        }
+    }
+
+    /**
+     * Load (or reuse cached) model.
+     * Returns a Promise that resolves when the model is ready.
+     */
+    load(modelId, deviceType, loadOptions = {}) {
+        if (this._usingWorker) {
+            return new Promise((res, rej) => {
+                this._loadRes = res;
+                this._loadRej = rej;
+                this._worker.postMessage({ type: 'load', modelId, deviceType, loadOptions });
+            });
+        }
+        return this._loadMainThread(modelId, deviceType, loadOptions);
+    }
+
+    /**
+     * Run transcription on the given Float32Array.
+     * The buffer is *transferred* (zero-copy) to the worker — do not
+     * use the array after calling this.
+     * Returns a Promise that resolves with the transcription result.
+     */
+    run(audioData, options) {
+        if (this._usingWorker) {
+            return new Promise((res, rej) => {
+                this._runRes = res;
+                this._runRej = rej;
+                this._worker.postMessage(
+                    { type: 'transcribe', audioData, options },
+                    [audioData.buffer]   // ← zero-copy ownership transfer
+                );
+            });
+        }
+        return this._runMainThread(audioData, options);
+    }
+
+    // ── Worker message routing ──────────────────────────────────────────
+    _handleWorkerMsg(data) {
+        switch (data.type) {
+            case 'progress':
+                this._onProgress?.(data.data);
+                break;
+            case 'ready':
+                this._loadRes?.();
+                this._loadRes = this._loadRej = null;
+                break;
+            case 'chunk':
+                this._onChunk?.(data.text);
+                break;
+            case 'result':
+                this._runRes?.(data.result);
+                this._runRes = this._runRej = null;
+                break;
+            case 'error':
+                this._reject(new Error(data.message));
+                break;
+        }
+    }
+
+    _reject(err) {
+        (this._loadRej || this._runRej)?.(err);
+        this._loadRes = this._loadRej = null;
+        this._runRes  = this._runRej  = null;
+    }
+
+    // ── Main-thread fallback ────────────────────────────────────────────
+    async _loadMainThread(modelId, deviceType, loadOptions = {}) {
+        if (this._loadedModel === modelId && this._pipeline) return;
+
+        const { pipeline, env } = await import(
+            'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.5.1'
+        );
+        env.allowLocalModels = false;
+        env.useBrowserCache  = true;
+
+        this._pipeline = await pipeline(
+            'automatic-speech-recognition',
+            modelId,
+            {
+                device:            deviceType,
+                ...loadOptions,
+                progress_callback: (p) => this._onProgress?.(p),
+            }
+        );
+        this._loadedModel = modelId;
+    }
+
+    async _runMainThread(audioData, options) {
+        const result = await this._pipeline(audioData, {
+            ...options,
+            chunk_callback: (chunk) => {
+                if (chunk?.text) this._onChunk?.(chunk.text);
+            },
+        });
+        return result;
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Utility helpers
+// ─────────────────────────────────────────────────────────────────────────
+function badge(color, text) {
+    const cls  = { green: 'badge-green', blue: 'badge-blue', yellow: 'badge-yellow' }[color] ?? 'badge-blue';
+    let icon;
+    if (color === 'green') {
+        icon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`;
+    } else if (color === 'blue') {
+        icon = `<span class="pulse-dot"></span>`;
+    } else {
+        icon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    }
+    return `<span class="badge ${cls}">${icon} ${text}</span>`;
+}
+
+function formatBytes(b) {
+    if (b === 0) return '0 B';
+    const k = 1024, u = ['B','KB','MB','GB'], i = Math.floor(Math.log(b) / Math.log(k));
+    return `${(b / k**i).toFixed(2)} ${u[i]}`;
+}
+
+function padTime(n, w = 2) { return String(n).padStart(w, '0'); }
+
+function formatDisplay(s) {
+    return `${padTime(Math.floor(s/60))}:${padTime(Math.floor(s%60))}.${padTime(Math.floor((s%1)*100))}`;
+}
+function formatSRTTime(s) {
+    return `${padTime(Math.floor(s/3600))}:${padTime(Math.floor((s%3600)/60))}:${padTime(Math.floor(s%60))},${padTime(Math.floor((s%1)*1000),3)}`;
+}
+function formatVTTTime(s) {
+    return `${padTime(Math.floor(s/3600))}:${padTime(Math.floor((s%3600)/60))}:${padTime(Math.floor(s%60))}.${padTime(Math.floor((s%1)*1000),3)}`;
+}
+
+function toSRT(result) {
+    if (!result.chunks?.length) return '';
+    return result.chunks.map((c, i) => {
+        const [st, en] = c.timestamp;
+        return `${i+1}\n${formatSRTTime(st)} --> ${formatSRTTime(en ?? st+1)}\n${c.text.trim()}\n`;
+    }).join('\n');
+}
+
+function toVTT(result) {
+    if (!result.chunks?.length) return 'WEBVTT\n\n';
+    return 'WEBVTT\n\n' + result.chunks.map((c, i) => {
+        const [st, en] = c.timestamp;
+        return `${i+1}\n${formatVTTTime(st)} --> ${formatVTTTime(en ?? st+1)}\n${c.text.trim()}\n`;
+    }).join('\n');
+}
+
+function download(content, filename, mime) {
+    const a = Object.assign(document.createElement('a'), {
+        href: URL.createObjectURL(new Blob([content], { type: mime })),
+        download: filename,
+    });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+function getModelLoadOptions() {
+    return {
+        dtype: deviceType === 'webgpu' ? 'q4f16' : 'q8',
+    };
+}
+
+function getSelectedLanguage() {
+    const language = languageSelect.value;
+    return language === 'auto' ? null : language;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// WebGPU detection
+// ─────────────────────────────────────────────────────────────────────────
+let deviceType = 'wasm';
+
+(async () => {
+    if (navigator.gpu) {
+        try {
+            const adapter = await navigator.gpu.requestAdapter();
+            if (adapter) {
+                deviceType = 'webgpu';
+                deviceStatusEl.innerHTML = badge('green', 'WebGPU — GPU acceleration enabled');
+                return;
+            }
+        } catch (_) { /* fall through */ }
+    }
+    deviceStatusEl.innerHTML = badge('blue', 'WebAssembly (CPU) — WebGPU not available');
+})();
+
+// ─────────────────────────────────────────────────────────────────────────
+// Transcriber setup
+// ─────────────────────────────────────────────────────────────────────────
+const trans = new Transcriber();
+
+// Stream download/load progress to the UI
+trans.onProgress((p) => {
+    if (p.status === 'initiate') {
+        progressTitle.textContent = 'Downloading model…';
+        progressStatus.textContent = `Loading ${p.file}…`;
+        progressBar.classList.remove('indeterminate');
+    } else if (p.status === 'download') {
+        progressTitle.textContent = 'Downloading model…';
+        if (p.total > 0) {
+            progressBar.classList.remove('indeterminate');
+            const pct = Math.round((p.loaded / p.total) * 100);
+            progressBar.style.width = `${pct}%`;
+            progressPct.textContent = `${pct}%`;
+            progressStatus.textContent =
+                `Downloading ${p.file} (${formatBytes(p.loaded)} / ${formatBytes(p.total)})`;
+        } else {
+            progressBar.classList.add('indeterminate');
+            progressPct.textContent = '…';
+            progressStatus.textContent = `Downloading ${p.file} (${formatBytes(p.loaded)})`;
+        }
+    } else if (p.status === 'done') {
+        progressBar.classList.remove('indeterminate');
+        progressStatus.textContent = `Loaded ${p.file}`;
+    } else if (p.status === 'progress') {
+        const pct = Math.round(p.progress ?? 0);
+        progressBar.style.width = `${pct}%`;
+        progressPct.textContent = `${pct}%`;
+    }
+});
+
+// Show live partial text as each 30-second chunk completes
+trans.onChunk((text) => {
+    chunkTexts.push(text.trim());
+    livePreview.classList.remove('hidden');
+    const joined = chunkTexts.join(' ');
+    // Show the trailing portion so the preview feels live
+    livePreview.textContent = joined.length > 160 ? '…' + joined.slice(-160) : joined;
+});
+
+// Start the worker (or fall back to main thread silently)
+trans.init();
+
+// ─────────────────────────────────────────────────────────────────────────
+// File handling
+// ─────────────────────────────────────────────────────────────────────────
+function handleFile(file) {
+    if (!file) return;
+    if (!file.type.startsWith('audio/') && !file.type.startsWith('video/')) {
+        alert('Please select an audio or video file.');
+        return;
+    }
+    selectedFile = file;
+    fileNameEl.textContent = file.name;
+    fileSizeEl.textContent = formatBytes(file.size);
+    uploadSection.classList.add('hidden');
+    selectedFileEl.classList.remove('hidden');
+    transcribeBtn.disabled = false;
+}
+
+function clearFile() {
+    selectedFile = null;
+    fileInput.value = '';
+    uploadSection.classList.remove('hidden');
+    selectedFileEl.classList.add('hidden');
+    transcribeBtn.disabled = true;
+    videoSection.classList.add('hidden');
+    resultSection.classList.add('hidden');
+    if (videoURL) { URL.revokeObjectURL(videoURL); videoURL = null; }
+    videoPlayer.src = '';
+}
+
+uploadSection.addEventListener('click',     () => fileInput.click());
+uploadSection.addEventListener('dragover',  (e) => { e.preventDefault(); uploadSection.classList.add('dragover'); });
+uploadSection.addEventListener('dragleave', ()  => uploadSection.classList.remove('dragover'));
+uploadSection.addEventListener('drop',      (e) => {
+    e.preventDefault();
+    uploadSection.classList.remove('dragover');
+    handleFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+removeFileBtn.addEventListener('click', clearFile);
+
+// ─────────────────────────────────────────────────────────────────────────
+// Audio decode — stays on the main thread for maximum compatibility.
+// The resulting Float32Array is transferred (zero-copy) to the worker.
+// ─────────────────────────────────────────────────────────────────────────
+async function decodeAudio(file) {
+    const arrayBuffer = await file.arrayBuffer();
+    // 16 kHz is what Whisper expects; the browser resamples automatically.
+    const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+    try {
+        const buf = await ctx.decodeAudioData(arrayBuffer);
+        let mono;
+        if (buf.numberOfChannels === 1) {
+            mono = buf.getChannelData(0);
+        } else {
+            // Mix stereo (or multi-channel) down to mono
+            const L = buf.getChannelData(0), R = buf.getChannelData(1);
+            mono = new Float32Array(L.length);
+            for (let i = 0; i < L.length; i++) mono[i] = (L[i] + R[i]) / 2;
+        }
+        await ctx.close();
+        return mono;
+    } catch (err) {
+        await ctx.close();
+        throw new Error(`Audio decode failed: ${err.message}`);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Main transcription flow
+// ─────────────────────────────────────────────────────────────────────────
+async function transcribe() {
+    if (!selectedFile || isProcessing) return;
+
+    isProcessing = true;
+    transcribeBtn.disabled = true;
+    resultSection.classList.add('hidden');
+    videoSection.classList.add('hidden');
+    chunkTexts = [];
+    livePreview.textContent = '';
+    livePreview.classList.add('hidden');
+
+    progressSection.classList.remove('hidden');
+    progressBar.classList.remove('indeterminate');
+    progressBar.style.width = '0%';
+    progressPct.textContent = '0%';
+
+    try {
+        const language = getSelectedLanguage();
+        const tsMode   = timestampSelect.value;
+        lastTsMode     = tsMode;
+
+        // Build transcription options.
+        //
+        // Key fixes for the hallucination loop:
+        //   • condition_on_prev_tokens: false  — each chunk decoded independently;
+        //     one bad chunk can no longer poison the next one
+        //   • return_timestamps: true (always)  — enables proper 30 s chunking even
+        //     when the user selects "No timestamps" for display
+        //   • compression_ratio_threshold       — discards chunks that look like loops
+        //   • no_speech_threshold               — skips silent / noise segments
+        const options = {
+            chunk_length_s:              30,
+            stride_length_s:              5,
+            task:                  'transcribe',
+            return_timestamps:     tsMode === 'word' ? 'word' : true,
+            condition_on_prev_tokens:    false,   // ← critical fix
+            compression_ratio_threshold: 2.4,    // ← discard hallucinated chunks
+            no_speech_threshold:         0.6,    // ← skip silence / noise
+        };
+        if (language) options.language = language;
+
+        // Load model up front so the first window transcribes immediately.
+        progressTitle.textContent  = 'Loading model…';
+        progressStatus.textContent = 'Checking large model cache…';
+        await trans.load(MODEL_ID, deviceType, getModelLoadOptions());
+
+        // Pick a path. Streaming is an optimisation for large MP4-family files;
+        // if it fails for any reason we fall back to decoding the whole file.
+        let done = false;
+        if (canStream(selectedFile)) {
+            try {
+                await transcribeStreaming(options, tsMode);
+                done = true;
+            } catch (streamErr) {
+                console.warn('Streaming extraction failed — falling back to full decode:', streamErr);
+                // Reset UI before the fallback re-runs from scratch.
+                resultSection.classList.add('hidden');
+                resultContent.textContent = '';
+                progressBar.classList.remove('indeterminate');
+                progressBar.style.width = '0%';
+                progressStatus.textContent = 'Streaming failed, decoding whole file instead…';
+            }
+        }
+        if (!done) {
+            await transcribeWhole(options, tsMode);
+        }
+
+    } catch (err) {
+        progressTitle.textContent = 'Error';
+        progressBar.classList.remove('indeterminate');
+        progressBar.style.width   = '0%';
+        progressPct.textContent   = '✕';
+
+        let msg = err.message;
+        if (msg.includes('decode'))                    msg = 'Could not decode audio. Check the file is a valid audio/video format.';
+        else if (msg.includes('memory'))               msg = 'Not enough memory. Try a smaller model or a shorter file.';
+        else if (msg.includes('network') || msg.includes('fetch')) msg = 'Network error while downloading the model.';
+        progressStatus.textContent = `Error: ${msg}`;
+    } finally {
+        isProcessing = false;
+        transcribeBtn.disabled = false;
+        chunkTexts = [];
+    }
+}
+
+transcribeBtn.addEventListener('click', transcribe);
+
+// ── Streaming path: bounded memory for large MP4-family files ──────────────
+// Decodes and transcribes one ~2-minute window at a time, displaying text as
+// it arrives. Decoded PCM for past windows is discarded, so peak memory stays
+// roughly flat regardless of file length.
+async function transcribeStreaming(options, tsMode) {
+    const combined = { text: '', chunks: [] };
+
+    // Show the result panel up front and stream plain text into it live.
+    resultSection.classList.remove('hidden');
+    resultContent.className = '';
+    resultContent.textContent = '';
+    livePreview.classList.add('hidden');
+    progressBar.classList.remove('indeterminate');
+
+    for await (const item of streamAudioWindows(selectedFile, {
+        windowSeconds: 120,
+        onStage: (s) => { progressTitle.textContent = s; },
+    })) {
+        // First yield is metadata; nothing to transcribe.
+        if (item.meta) {
+            progressStatus.textContent =
+                item.durationSec
+                    ? `${item.totalWindows} windows · ~${formatDisplay(item.durationSec)} total`
+                    : `${item.totalWindows} windows`;
+            continue;
+        }
+
+        const { audio, offsetSec, windowIndex, totalWindows } = item;
+
+        progressTitle.textContent  = 'Transcribing…';
+        const pct = Math.round(((windowIndex - 1) / totalWindows) * 100);
+        progressBar.style.width = `${pct}%`;
+        progressPct.textContent = `${pct}%`;
+        progressStatus.textContent =
+            `Window ${windowIndex} of ${totalWindows} — from ${formatDisplay(offsetSec)}`;
+
+        // Transcribe this window. The Float32 buffer is transferred to the
+        // worker; `await` here is what gives the generator its backpressure.
+        const part = await trans.run(audio, options);
+
+        // Accumulate text + timestamp-offset chunks for the final result.
+        const partText = (part.text || '').trim();
+        if (partText) combined.text += (combined.text ? ' ' : '') + partText;
+
+        if (part.chunks) {
+            for (const c of part.chunks) {
+                const st = (c.timestamp?.[0] ?? 0) + offsetSec;
+                const en = (c.timestamp?.[1] ?? c.timestamp?.[0] ?? 0) + offsetSec;
+                combined.chunks.push({ text: c.text, timestamp: [st, en] });
+            }
+        }
+
+        // Progressive plain-text preview while we work.
+        if (partText) {
+            resultContent.textContent = (resultContent.textContent + ' ' + partText).trim();
+            resultContent.scrollTop = resultContent.scrollHeight;
+        }
+    }
+
+    progressBar.style.width = '100%';
+    progressPct.textContent = '100%';
+    progressSection.classList.add('hidden');
+
+    // Re-render with the requested formatting (timestamps / video subtitles).
+    lastResult = combined;
+    displayResult(combined, tsMode);
+}
+
+// ── Whole-file path: original behaviour, used as the universal fallback ────
+async function transcribeWhole(options, tsMode) {
+    progressTitle.textContent  = 'Decoding audio…';
+    progressStatus.textContent = 'Converting to 16 kHz mono PCM…';
+    const audioData = await decodeAudio(selectedFile);
+
+    progressTitle.textContent  = 'Transcribing…';
+    progressStatus.textContent = 'Processing audio chunks…';
+    progressBar.classList.add('indeterminate');
+    progressPct.textContent    = '…';
+
+    const result = await trans.run(audioData, options);
+
+    progressSection.classList.add('hidden');
+    livePreview.classList.add('hidden');
+    displayResult(result, tsMode);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Result display
+// ─────────────────────────────────────────────────────────────────────────
+function displayResult(result, tsMode) {
+    lastResult = result;
+    resultSection.classList.remove('hidden');
+
+    // Video player for video files
+    if (selectedFile?.type.startsWith('video/')) {
+        if (tsMode !== 'none' && result.chunks?.length) {
+            showVideoWithSubs(result);
+        } else {
+            showVideoOnly();
+        }
+    }
+
+    // Plain-text mode (or no chunks returned)
+    if (tsMode === 'none' || !result.chunks?.length) {
+        resultContent.textContent = result.text.trim();
+        resultContent.className   = '';
+        exportSrtBtn.style.display = 'none';
+        return;
+    }
+
+    // Timestamp mode
+    resultContent.innerHTML = '';
+    resultContent.className = `timestamps-view${tsMode === 'word' ? ' word-level' : ''}`;
+
+    result.chunks.forEach((chunk) => {
+        const el = document.createElement(tsMode === 'word' ? 'span' : 'div');
+        el.className = 'chunk';
+        if (chunk.timestamp) {
+            const ts = document.createElement('span');
+            ts.className   = 'timestamp';
+            ts.textContent = `[${formatDisplay(chunk.timestamp[0])}] `;
+            el.appendChild(ts);
+        }
+        el.appendChild(document.createTextNode(chunk.text));
+        resultContent.appendChild(el);
+    });
+    exportSrtBtn.style.display = 'flex';
+}
+
+function showVideoWithSubs(result) {
+    if (videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = URL.createObjectURL(selectedFile);
+    videoPlayer.src = videoURL;
+
+    const vttBlob = new Blob([toVTT(result)], { type: 'text/vtt' });
+    const vttURL  = URL.createObjectURL(vttBlob);
+    subtitleTrack.src = vttURL;
+    videoPlayer.addEventListener('loadedmetadata', () => URL.revokeObjectURL(vttURL), { once: true });
+
+    videoPlayerTitle.textContent = 'Video Preview with Subtitles';
+    subtitleToggle.style.display = 'flex';
+    subtitleToggle.classList.add('active');
+    subtitleToggle.innerHTML = iconSubOn + ' Subtitles: ON';
+    videoSection.classList.remove('hidden');
+}
+
+function showVideoOnly() {
+    if (videoURL) URL.revokeObjectURL(videoURL);
+    videoURL = URL.createObjectURL(selectedFile);
+    videoPlayer.src = videoURL;
+    videoPlayerTitle.textContent = 'Video Preview';
+    subtitleToggle.style.display = 'none';
+    videoSection.classList.remove('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Export helpers
+// ─────────────────────────────────────────────────────────────────────────
+function plainText() {
+    if (lastTsMode === 'none') return resultContent.textContent;
+    return [...resultContent.querySelectorAll('.chunk')].map(c => c.textContent).join('\n').trim();
+}
+
+copyBtn.addEventListener('click', async () => {
+    await navigator.clipboard.writeText(plainText()).catch(() => {});
+    copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => {
+        copyBtn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+    }, 2000);
+});
+
+downloadBtn.addEventListener('click', () => {
+    download(plainText(), baseName() + '_transcription.txt', 'text/plain');
+});
+
+exportSrtBtn.addEventListener('click', () => {
+    if (!lastResult) return;
+    download(toSRT(lastResult), baseName() + '_subtitles.srt', 'text/plain; charset=utf-8');
+});
+
+function baseName() {
+    return selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, '') : 'transcription';
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Subtitle toggle
+// ─────────────────────────────────────────────────────────────────────────
+const iconSubOn  = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+const iconSubOff = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`;
+
+subtitleToggle.addEventListener('click', () => {
+    const track = videoPlayer.textTracks[0];
+    if (!track) return;
+    if (track.mode === 'showing') {
+        track.mode = 'hidden';
+        subtitleToggle.classList.remove('active');
+        subtitleToggle.innerHTML = iconSubOff + ' Subtitles: OFF';
+    } else {
+        track.mode = 'showing';
+        subtitleToggle.classList.add('active');
+        subtitleToggle.innerHTML = iconSubOn + ' Subtitles: ON';
+    }
+});
+</script>
+</body>
+</html>

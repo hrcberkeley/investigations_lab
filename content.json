@@ -1,0 +1,394 @@
+{
+  "investigations": [
+    {
+      "title": "Tracking third-country deportations from the United States",
+      "url": "https://humanrights.berkeley.edu/projects/tracking-third-country-deportations-from-the-united-states/"
+    },
+    {
+      "title": "Documenting displacement of Palestinians and settler violence in the West Bank",
+      "url": "https://humanrights.berkeley.edu/projects/documenting-displacement-of-palestinians-and-settler-violence-in-the-west-bank/"
+    },
+    {
+      "title": "Investigating misuse of crowd control weapons against protestors",
+      "url": "https://humanrights.berkeley.edu/projects/investigating-misuse-of-crowd-control-weapons-against-protestors/"
+    },
+    {
+      "title": "Verifying Abuses in El Salvador’s CECOT Prison",
+      "url": "https://humanrights.berkeley.edu/projects/verifying-abuses-in-el-salvadors-cecot-prison/"
+    },
+    {
+      "title": "Community Resource Guide for Data Center Development",
+      "url": "https://humanrights.berkeley.edu/projects/community-resource-guide-for-data-center-development/"
+    },
+    {
+      "title": "Tracking the Trump Administration’s Impact on Military Communities",
+      "url": "https://humanrights.berkeley.edu/projects/tracking-the-trump-administrations-impact-on-military-communities/"
+    },
+    {
+      "title": "Documenting Violence Against Journalists Covering Protests in Kenya",
+      "url": "https://humanrights.berkeley.edu/projects/documenting-violence-against-journalists-covering-protests-in-kenya/"
+    },
+    {
+      "title": "Documenting Election-Related Violence in Mozambique",
+      "url": "https://humanrights.berkeley.edu/projects/documenting-election-violence-in-mozambique/"
+    },
+    {
+      "title": "Analysis of Farmworker Access and Safety during Sonoma County Wildfires",
+      "url": "https://humanrights.berkeley.edu/projects/analysis-of-farmworker-access-and-safety-during-sonoma-county-wildfires/"
+    },
+    {
+      "title": "Impact of Climate Change on Vulnerable People in Pakistan",
+      "url": "https://humanrights.berkeley.edu/projects/impact-of-climate-change-on-vulnerable-people-in-pakistan/"
+    },
+    {
+      "title": "Open Source Investigative Reporting",
+      "url": "https://humanrights.berkeley.edu/projects/open-source-investigative-reporting/"
+    },
+    {
+      "title": "Investigating Violence Against Woman, Life, Freedom Protesters in Iran",
+      "url": "https://humanrights.berkeley.edu/projects/investigating-violence-against-woman-life-freedom-protesters-in-iran/"
+    },
+    {
+      "title": "Documenting the Killing of Indigenous Land Defenders",
+      "url": "https://humanrights.berkeley.edu/projects/documenting-the-killing-of-indigenous-land-defenders/"
+    },
+    {
+      "title": "Climate Displacement and Migration",
+      "url": "https://humanrights.berkeley.edu/projects/climate-displacement-and-migration/"
+    },
+    {
+      "title": "Delivered to Danger",
+      "url": "https://humanrights.berkeley.edu/projects/delivered-to-danger/"
+    },
+    {
+      "title": "Race in Asylum Adjudication and Detention Decisions",
+      "url": "https://humanrights.berkeley.edu/projects/race-in-asylum-adjudication-and-detention-decision/"
+    },
+    {
+      "title": "Myanmar: Bodies as Tools of Terror",
+      "url": "https://humanrights.berkeley.edu/projects/myanmar-bodies-as-tools-of-terror/"
+    },
+    {
+      "title": "Human Rights Crisis in Chile",
+      "url": "https://humanrights.berkeley.edu/projects/human-rights-crisis-in-chile/"
+    },
+    {
+      "title": "Forced Uyghur Labor in China’s Mask Supply Chain",
+      "url": "https://humanrights.berkeley.edu/projects/forced-uyghur-labor-in-chinas-mask-supply-chain/"
+    },
+    {
+      "title": "Documenting Violence in Cameroon",
+      "url": "https://humanrights.berkeley.edu/projects/documenting-violence-in-cameroon/"
+    },
+    {
+      "title": "Morocco’s Abuses in Western Sahara",
+      "url": "https://humanrights.berkeley.edu/projects/moroccos-abuses-in-western-sahara/"
+    },
+    {
+      "title": "Mining in Cerro de Pasco",
+      "url": "https://humanrights.berkeley.edu/projects/mining-in-cerro-de-pasco/"
+    },
+    {
+      "title": "Myanmar Burning: Hatebook",
+      "url": "https://humanrights.berkeley.edu/projects/myanmar-burning-hatebook/"
+    },
+    {
+      "title": "Police Partially Blind Eight People at Protests",
+      "url": "https://humanrights.berkeley.edu/projects/police-partially-blind-eight-people-at-protests/"
+    },
+    {
+      "title": "Violence Against Black Lives Matter Protesters",
+      "url": "https://humanrights.berkeley.edu/projects/violence-against-black-lives-matter-protesters/"
+    },
+    {
+      "title": "Tear Gas: An Investigation",
+      "url": "https://humanrights.berkeley.edu/projects/tear-gas-an-investigation/"
+    },
+    {
+      "title": "Live Monitoring U.S. Election 2020",
+      "url": "https://humanrights.berkeley.edu/projects/live-monitoring-u-s-election-2020/"
+    },
+    {
+      "title": "Harassment & Hate Speech Against the 2018 Migrant Caravan",
+      "url": "https://humanrights.berkeley.edu/projects/harassment-hate-speech-against-the-2018-migrant-caravan/"
+    },
+    {
+      "title": "Verifying Sudan’s Khartoum Massacre",
+      "url": "https://humanrights.berkeley.edu/projects/verifying-sudans-khartoum-massacre/"
+    },
+    {
+      "title": "Sudan Attacks on Protestors and Health Workers",
+      "url": "https://humanrights.berkeley.edu/projects/sudan-attacks-on-protestors-and-health-workers/"
+    },
+    {
+      "title": "Migrant Driftbacks in the Aegean Sea",
+      "url": "https://humanrights.berkeley.edu/projects/migrant-driftbacks-in-the-aegean-sea/"
+    },
+    {
+      "title": "Atlas of Attacks: Global Violence Against Healthcare",
+      "url": "https://humanrights.berkeley.edu/projects/atlas-of-attacks-global-violence-against-healthcare/"
+    }
+  ],
+  "stages": [
+    {
+      "id": "frame",
+      "name": "Frame",
+      "line": "Turn a research question into a data hypothesis, and plan for your wellbeing."
+    },
+    {
+      "id": "find",
+      "name": "Find",
+      "line": "Search deliberately, so you can defend what you found and what you didn't."
+    },
+    {
+      "id": "preserve",
+      "name": "Preserve",
+      "line": "Archive and log sources before they disappear."
+    },
+    {
+      "id": "verify",
+      "name": "Verify",
+      "line": "Test the connection between a piece of content and the claim made about it."
+    },
+    {
+      "id": "analyze",
+      "name": "Analyze",
+      "line": "Make sense of large collections of documents, images, video, audio and networks."
+    },
+    {
+      "id": "protect",
+      "name": "Protect",
+      "line": "Reduce exposure to distressing material and keep sensitive files off third-party servers."
+    }
+  ],
+  "worksheets": [
+    {
+      "id": "threat-modeling",
+      "stage": "frame",
+      "title": "Psycho-Social Threat Modeling",
+      "version": "September 2025",
+      "summary": "Identify risks to your wellbeing and your teammates', and plan how to reduce them before, during and after an investigation.",
+      "file": "sheets/threat-modeling.docx"
+    },
+    {
+      "id": "question-to-data",
+      "stage": "frame",
+      "title": "From Research Question to Data",
+      "version": "August 2025",
+      "summary": "Break a research question into its parts, find proxies that offer indirect evidence, and form a data hypothesis.",
+      "file": "sheets/question-to-data.docx"
+    },
+    {
+      "id": "landscape",
+      "stage": "frame",
+      "title": "Digital Landscape Assessment",
+      "version": "January 2026",
+      "summary": "Work with your team to map the platforms, languages, producers and formats where your data is likely to be.",
+      "file": "sheets/landscape.docx"
+    },
+    {
+      "id": "searching",
+      "stage": "find",
+      "title": "Searching for Data: a Data Discovery Framework",
+      "version": "July 2025",
+      "summary": "Think about data relationally: where it is produced, how it is shaped, and where it is likely to live.",
+      "file": "sheets/searching.docx"
+    },
+    {
+      "id": "operators",
+      "stage": "find",
+      "title": "Advanced Search Operators Quick Reference",
+      "version": "July 2025",
+      "summary": "A one-page reference for exact phrases, exclusions, site and file-type searches, date ranges and more.",
+      "file": "sheets/operators.docx"
+    },
+    {
+      "id": "pse",
+      "stage": "find",
+      "title": "Creating a Programmable Search Engine",
+      "version": "March 2026",
+      "summary": "Build a Google search engine over sources you choose, trading completeness for precision and less personalization.",
+      "file": "sheets/pse.docx"
+    },
+    {
+      "id": "sweep",
+      "stage": "find",
+      "title": "Doing a Systematic Sweep Search",
+      "version": "June 2026",
+      "summary": "Slice a long, noisy search into time windows so you can make defensible claims about completeness, and even absence.",
+      "file": "sheets/sweep.docx"
+    },
+    {
+      "id": "archiving",
+      "stage": "preserve",
+      "title": "Archiving Basics",
+      "version": "February 2026",
+      "summary": "From a better browser history to the Internet Archive and scripted archiving: keep a research trail you can trace back.",
+      "file": "sheets/archiving.docx"
+    },
+    {
+      "id": "save-to-sheets",
+      "stage": "preserve",
+      "title": "Installing the Save to Sheets Extension",
+      "version": "May 2026",
+      "summary": "Set up the Save to Sheets extension so your team can collect URLs and their metadata in one shared spreadsheet.",
+      "file": "sheets/save-to-sheets.docx"
+    },
+    {
+      "id": "verification",
+      "stage": "verify",
+      "title": "Digital Verification",
+      "version": "July 2025",
+      "summary": "The verification workflow through technical, content and source analysis, and how to archive and report the results.",
+      "file": "sheets/verification.docx"
+    }
+  ],
+  "tools": [
+    {
+      "id": "sidekick",
+      "stage": "find",
+      "kind": "extension",
+      "name": "Sidekick",
+      "summary": "A browser sidebar that does what the Claude for Chrome extension does, using a local model in LM Studio. No data leaves your machine.",
+      "source": "https://github.com/kolenyo2099/sidekick"
+    },
+    {
+      "id": "queryforge",
+      "stage": "find",
+      "kind": "browser",
+      "name": "QueryForge",
+      "summary": "A GDELT query builder with a bundled directory of news outlets by country, for monitoring coverage of an event.",
+      "launch": "queryforge/query-forge-v4.html"
+    },
+    {
+      "id": "deepresearch",
+      "stage": "find",
+      "kind": "browser",
+      "name": "Deep Research Agent",
+      "summary": "Local agentic research in the browser over a Google Programmable Search Engine, so you control the sources the model reads.",
+      "launch": "deep-research-agent/"
+    },
+    {
+      "id": "canary",
+      "stage": "find",
+      "kind": "extension",
+      "name": "Canary",
+      "summary": "Collects GDELT, Google News, Media Cloud, X, Bluesky and Telegram results in the background into an inbox you triage, tag and export.",
+      "source": "https://github.com/kolenyo2099/canary-lite"
+    },
+    {
+      "id": "hrc-archiver",
+      "stage": "preserve",
+      "kind": "desktop",
+      "name": "HRC Archiver",
+      "summary": "Bellingcat's Auto Archiver with a graphical interface and no Google integrations. Archive links to video, images and social media posts.",
+      "source": "https://github.com/kolenyo2099/hrc-archiver"
+    },
+    {
+      "id": "save-to-sheets",
+      "stage": "preserve",
+      "kind": "extension",
+      "name": "Save to Sheets",
+      "summary": "Capture web pages, search results and posts to a shared Google Sheet with one click.",
+      "source": "https://github.com/kolenyo2099/save-to-sheets"
+    },
+    {
+      "id": "geolocator",
+      "stage": "verify",
+      "kind": "browser",
+      "name": "Geolocator",
+      "summary": "2D and 3D maps, satellite imagery, line-of-sight, sun elevation and shadow analysis in one place.",
+      "launch": "geolocator/"
+    },
+    {
+      "id": "kiln",
+      "stage": "verify",
+      "kind": "browser",
+      "name": "Kiln",
+      "summary": "Search Sentinel-2 imagery by visual similarity, detect land-cover change, or teach it a concept from a few painted examples.",
+      "launch": "kiln/"
+    },
+    {
+      "id": "embedscape",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "EmbedScape",
+      "summary": "Explore text, images or video by meaning: see semantic clusters and search within the collection.",
+      "launch": "embedscape/"
+    },
+    {
+      "id": "jepajepa",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "Jepa! Jepa!",
+      "summary": "Cluster images and video by visual similarity and run reverse image search over your own collection.",
+      "launch": "jepajepa/"
+    },
+    {
+      "id": "videologue",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "Videologue",
+      "summary": "Build a catalogue of the faces, people, vehicles and buildings that appear across hours of video.",
+      "launch": "videologue/"
+    },
+    {
+      "id": "brag",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "B-RAG",
+      "summary": "Build a database from your documents and ask questions of it with a local model.",
+      "launch": "b-rag/"
+    },
+    {
+      "id": "transcriber",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "HRC Transcribe",
+      "summary": "Extract the audio from video and transcribe it with Whisper, entirely in the browser.",
+      "launch": "transcribe/"
+    },
+    {
+      "id": "translate",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "HRC Translate",
+      "summary": "Translation in the browser with Meta's NLLB-200, covering more than 200 languages including many minority languages.",
+      "launch": "translate/"
+    },
+    {
+      "id": "surfer",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "Schuim Surfer",
+      "summary": "Network analysis of social media data collected with Zeeschuimer, with signals of coordinated inauthentic behavior.",
+      "launch": "surfer/",
+      "source": "https://github.com/kolenyo2099/schuimsurfer"
+    },
+    {
+      "id": "events",
+      "stage": "analyze",
+      "kind": "browser",
+      "name": "Event Data Explorer",
+      "summary": "Map and filter event data, or start from a sample dataset.",
+      "launch": "events/",
+      "source": "https://github.com/hrcberkeley/events"
+    },
+    {
+      "id": "censorama",
+      "stage": "protect",
+      "kind": "browser",
+      "name": "Censorama",
+      "summary": "Blurs human shapes in video so you can look for contextual clues with less exposure to distressing content.",
+      "launch": "censorama/"
+    },
+    {
+      "id": "hrcshare",
+      "stage": "protect",
+      "kind": "browser",
+      "name": "HRC Share",
+      "summary": "Peer-to-peer file transfer between devices, with no server in the middle.",
+      "launch": "hrcshare/"
+    }
+  ]
+}

@@ -1,0 +1,1475 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kiln — Satellite Embedding Similarity Search</title>
+    <style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        /* Panel width scales with the viewport: 280px minimum, up to 360px. */
+        --panel-w: clamp(280px, 22vw, 360px);
+      }
+
+      html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+        background: #0d1117;
+        color: #e6edf3;
+      }
+
+      /* ── Layout ── */
+
+      #app {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        position: relative;
+      }
+
+      #map {
+        flex: 1;
+        height: 100%;
+        /* MapLibre needs position non-static for its canvas */
+        position: relative;
+      }
+
+      /* ── Left panel ── */
+
+      #panel {
+        width: var(--panel-w);
+        min-width: 0;
+        height: 100%;
+        background: #0d1117;
+        border-right: 1px solid #21262d;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 10;
+      }
+
+      .panel-header {
+        padding: 1rem 1rem 0.75rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      .panel-header h1 {
+        font-size: 1.1rem;
+        color: #58a6ff;
+        letter-spacing: 0.04em;
+      }
+
+      .panel-header .subtitle {
+        font-size: 0.7rem;
+        color: #8b949e;
+        margin-top: 0.2rem;
+        line-height: 1.4;
+      }
+
+      #app-status {
+        font-size: 0.7rem;
+        color: #3fb950;
+        margin-top: 0.4rem;
+        min-height: 1em;
+      }
+
+      .panel-section {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      .panel-section h2 {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.6rem;
+      }
+
+      /* ── Inputs ── */
+
+      .input-row {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      input[type="text"] {
+        flex: 1;
+        font-family: inherit;
+        font-size: 0.8rem;
+        background: #161b22;
+        color: #e6edf3;
+        border: 1px solid #30363d;
+        border-radius: 4px;
+        padding: 0.35rem 0.5rem;
+        outline: none;
+      }
+
+      input[type="text"]:focus {
+        border-color: #58a6ff;
+      }
+
+      input.input-error {
+        border-color: #f85149;
+      }
+
+      /* ── Buttons ── */
+
+      button {
+        font-family: inherit;
+        font-size: 0.8rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        padding: 0.35rem 0.75rem;
+        transition: background 0.12s;
+      }
+
+      button:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
+
+      .btn-primary {
+        background: #1f6feb;
+        color: #fff;
+      }
+      .btn-primary:not(:disabled):hover { background: #388bfd; }
+
+      .btn-secondary {
+        background: #21262d;
+        color: #e6edf3;
+        border: 1px solid #30363d;
+      }
+      .btn-secondary:not(:disabled):hover { background: #30363d; }
+
+      .btn-danger {
+        background: #21262d;
+        color: #f85149;
+        border: 1px solid #30363d;
+      }
+      .btn-danger:not(:disabled):hover { background: #2d1a1a; }
+
+      .btn-draw {
+        background: #2d2a1a;
+        color: #f5a623;
+        border: 1px solid #4a3f10;
+        width: 100%;
+        padding: 0.45rem;
+      }
+      .btn-draw:not(:disabled):hover { background: #3d3820; }
+      .btn-draw.active {
+        background: #f5a623;
+        color: #0d1117;
+      }
+
+      .button-row {
+        display: flex;
+        gap: 0.4rem;
+      }
+
+      .button-row button { flex: 1; }
+
+      /* ── Select ── */
+
+      select {
+        font-family: inherit;
+        font-size: 0.8rem;
+        background: #161b22;
+        color: #e6edf3;
+        border: 1px solid #30363d;
+        border-radius: 4px;
+        padding: 0.35rem 0.5rem;
+        width: 100%;
+        outline: none;
+        margin-bottom: 0.5rem;
+      }
+
+      select:disabled { opacity: 0.5; }
+
+      /* ── Confirm panel ── */
+
+      #confirm-panel {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #21262d;
+        background: #0d1117;
+      }
+
+      #confirm-panel h2 {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.6rem;
+      }
+
+      #cost-text {
+        font-size: 0.78rem;
+        color: #e6edf3;
+        margin-bottom: 0.65rem;
+        line-height: 1.5;
+      }
+
+      /* ── Progress ── */
+
+      #progress-wrap {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      #progress-bar-track {
+        width: 100%;
+        background: #21262d;
+        border-radius: 3px;
+        height: 6px;
+        overflow: hidden;
+        margin-bottom: 0.4rem;
+      }
+
+      #progress-bar {
+        height: 100%;
+        background: #3fb950;
+        border-radius: 3px;
+        transition: width 0.25s ease;
+        width: 0%;
+      }
+
+      #progress-label {
+        font-size: 0.72rem;
+        color: #8b949e;
+      }
+
+      /* ── Status bar (bottom of panel) ── */
+
+      #status-bar {
+        margin-top: auto;
+        padding: 0.6rem 1rem;
+        border-top: 1px solid #21262d;
+        font-size: 0.72rem;
+        color: #8b949e;
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+
+      #chip-count { color: #e6edf3; }
+
+      /* ── Coordinate readout (overlaid on map) ── */
+
+      #coord-readout {
+        position: absolute;
+        bottom: 28px;
+        left: calc(var(--panel-w) + 10px);
+        background: rgba(13, 17, 23, 0.75);
+        color: #8b949e;
+        font-family: ui-monospace, monospace;
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 3px;
+        pointer-events: none;
+        z-index: 5;
+        min-width: 12ch;
+      }
+
+      /* ── Temporal analysis section ── */
+
+      #temporal-section {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      #temporal-section h2 {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
+      }
+
+      #temporal-baseline-info {
+        font-size: 0.72rem;
+        color: #58a6ff;
+        margin-bottom: 0.5rem;
+      }
+
+      #timeline-chart-container {
+        margin-bottom: 0.4rem;
+        /* SVG overflows slightly for dots near the edge; clip cleanly. */
+        overflow: visible;
+      }
+
+      #temporal-status {
+        font-size: 0.68rem;
+        color: #8b949e;
+        line-height: 1.4;
+        margin-bottom: 0.5rem;
+      }
+
+      /* ── Similarity section ── */
+
+      #reference-info {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin-bottom: 0.6rem;
+        line-height: 1.5;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 4px;
+        padding: 0.4rem 0.5rem;
+      }
+
+      .threshold-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .threshold-row label {
+        font-size: 0.72rem;
+        color: #8b949e;
+        white-space: nowrap;
+      }
+
+      #threshold-value {
+        font-size: 0.72rem;
+        color: #e6edf3;
+        min-width: 3ch;
+        text-align: right;
+      }
+
+      input[type="range"] {
+        flex: 1;
+        accent-color: #1f6feb;
+        cursor: pointer;
+      }
+
+      #change-threshold-value {
+        font-size: 0.72rem;
+        color: #e6edf3;
+        min-width: 3ch;
+        text-align: right;
+      }
+
+      /* ── Analysis mode toggle ── */
+
+      .mode-toggle {
+        display: flex;
+        gap: 0;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        overflow: hidden;
+      }
+
+      .mode-btn {
+        flex: 1;
+        background: #161b22;
+        color: #8b949e;
+        border: none;
+        padding: 0.45rem;
+        font-size: 0.75rem;
+        cursor: pointer;
+      }
+
+      .mode-btn:not(.active):hover { background: #21262d; color: #e6edf3; }
+
+      .mode-btn.active {
+        background: #1f6feb;
+        color: #fff;
+      }
+
+      /* Three-way toggle gets a tighter font so labels fit the 260px panel. */
+      .mode-toggle .mode-btn { font-size: 0.7rem; padding: 0.45rem 0.2rem; }
+
+      /* Probe brush: positive paints green, negative paints red when active so
+         the active brush matches the label color drawn on the map. */
+      .probe-brush-pos.active { background: #238636; color: #fff; }
+      .probe-brush-neg.active { background: #b62324; color: #fff; }
+
+      /* ── Change detection ── */
+
+      .change-help {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin-bottom: 0.6rem;
+        line-height: 1.4;
+      }
+
+      .change-period-label {
+        display: block;
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.2rem;
+      }
+
+      .change-hint {
+        font-size: 0.7rem;
+        line-height: 1.4;
+        margin-top: 0.5rem;
+      }
+
+      .change-hint-ok { color: #3fb950; }
+      .change-hint-warn { color: #d29922; }
+
+      .change-status {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin-top: 0.5rem;
+        line-height: 1.4;
+      }
+
+      .change-analog-sep {
+        height: 1px;
+        background: #21262d;
+        margin: 0.75rem 0 0.6rem;
+      }
+
+      /* ── Results panel ── */
+
+      #results-section {
+        padding: 0.75rem 0 0;
+        border-bottom: 1px solid #21262d;
+        flex-shrink: 0;
+      }
+
+      #results-section h2 {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.4rem;
+        padding: 0 1rem;
+      }
+
+      #results-reference {
+        padding: 0.4rem 1rem 0.5rem;
+        border-bottom: 1px solid #21262d;
+        margin-bottom: 0.25rem;
+      }
+
+      .ref-label {
+        font-size: 0.65rem;
+        color: #3fb950;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 0.15rem;
+      }
+
+      .ref-cell-id {
+        font-size: 0.72rem;
+        color: #e6edf3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .ref-date {
+        font-size: 0.68rem;
+        color: #8b949e;
+      }
+
+      #results-list {
+        max-height: 280px;
+        overflow-y: auto;
+        padding: 0 0 0.5rem;
+      }
+
+      .result-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        width: 100%;
+        padding: 0.3rem 1rem;
+        background: none;
+        border: none;
+        border-radius: 0;
+        cursor: pointer;
+        text-align: left;
+        font-family: inherit;
+        font-size: 0.78rem;
+        color: #e6edf3;
+        border-bottom: 1px solid #161b22;
+      }
+
+      .result-row:hover { background: #161b22; }
+
+      .result-row.selected {
+        background: #0c2335;
+        border-left: 2px solid #00e5ff;
+        padding-left: calc(1rem - 2px);
+      }
+
+      .result-color-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        border: 1px solid rgba(255,255,255,0.15);
+      }
+
+      .result-rank {
+        font-size: 0.65rem;
+        color: #8b949e;
+        min-width: 1.4rem;
+        text-align: right;
+        flex-shrink: 0;
+      }
+
+      .result-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      .result-cell-id {
+        font-size: 0.72rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        color: #e6edf3;
+      }
+
+      .result-date {
+        font-size: 0.65rem;
+        color: #8b949e;
+      }
+
+      .result-score {
+        font-size: 0.75rem;
+        color: #f5a623;
+        font-weight: 600;
+        flex-shrink: 0;
+        min-width: 3.5rem;
+        text-align: right;
+      }
+
+      .results-empty, .results-more {
+        font-size: 0.72rem;
+        color: #8b949e;
+        padding: 0.4rem 1rem;
+        line-height: 1.4;
+      }
+
+      /* ── Similarity color legend (overlaid on map) ── */
+
+      .similarity-legend {
+        position: absolute;
+        bottom: 60px;
+        right: 50px;
+        background: rgba(13, 17, 23, 0.88);
+        border: 1px solid #30363d;
+        border-radius: 5px;
+        padding: 0.55rem 0.65rem;
+        z-index: 5;
+        pointer-events: none;
+        font-family: ui-monospace, monospace;
+        min-width: 130px;
+      }
+
+      .legend-title {
+        font-size: 0.65rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        margin-bottom: 0.4rem;
+      }
+
+      /* Swatches: reference chip + optional selected chip */
+      .legend-swatches {
+        margin-bottom: 0.35rem;
+      }
+
+      .legend-swatch-row {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.62rem;
+        color: #c9d1d9;
+        margin-bottom: 0.18rem;
+      }
+
+      .legend-swatch-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        flex-shrink: 0;
+        border: 1px solid rgba(255,255,255,0.15);
+      }
+
+      .legend-swatch-ref { background: #ffffff; }
+      .legend-swatch-sel { background: #00e5ff; }
+
+      .legend-sep {
+        border-top: 1px solid #30363d;
+        margin: 0.3rem 0;
+      }
+
+      /* Gradient + tick labels */
+      .legend-body {
+        display: flex;
+        gap: 0.35rem;
+        align-items: stretch;
+      }
+
+      .legend-gradient {
+        width: 12px;
+        flex-shrink: 0;
+        border-radius: 3px;
+        background: linear-gradient(
+          to bottom,
+          #ff0000 0%,
+          #ffd700 50%,
+          #0014c8 100%
+        );
+      }
+
+      .legend-ticks {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-size: 0.6rem;
+        color: #8b949e;
+        line-height: 1.2;
+      }
+
+      .legend-threshold-label {
+        color: #6e7681;
+        font-size: 0.58rem;
+      }
+
+      .legend-below-note {
+        margin-top: 0.3rem;
+        font-size: 0.58rem;
+        color: #6e7681;
+        line-height: 1.3;
+      }
+
+      /* ── Region controls ── */
+
+      #regions-section {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      #regions-section h2 {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.5rem;
+      }
+
+      .region-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #161b22;
+      }
+
+      .region-row:last-child { border-bottom: none; }
+
+      .region-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .region-label {
+        font-size: 0.72rem;
+        color: #e6edf3;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .region-meta {
+        font-size: 0.65rem;
+        color: #8b949e;
+        margin-top: 0.1rem;
+      }
+
+      .region-release-btn {
+        font-size: 0.68rem;
+        padding: 0.2rem 0.5rem;
+        flex-shrink: 0;
+      }
+
+      /* ── Data budget ── */
+
+      #session-total {
+        font-size: 0.68rem;
+        color: #8b949e;
+      }
+
+      #memory-warn {
+        font-size: 0.68rem;
+        color: #8b949e;
+      }
+
+      #memory-warn.memory-warning {
+        color: #f5a623;
+      }
+
+      /* ── Cell data modal ── */
+
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(1, 4, 9, 0.6);
+        backdrop-filter: blur(2px);
+      }
+
+      .modal-card {
+        position: relative;
+        width: min(380px, calc(100vw - 2rem));
+        max-height: calc(100vh - 3rem);
+        overflow-y: auto;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        padding: 1rem 1.1rem 1.1rem;
+      }
+
+      .modal-close {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.55rem;
+        background: none;
+        border: none;
+        color: #8b949e;
+        font-size: 1.4rem;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0.1rem 0.3rem;
+      }
+      .modal-close:hover { color: #e6edf3; }
+
+      .modal-title {
+        font-size: 0.95rem;
+        color: #e6edf3;
+        margin: 0 1.5rem 0.15rem 0;
+      }
+
+      .modal-subtitle {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin: 0 0 0.7rem;
+      }
+
+      .modal-rows {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      .modal-row {
+        display: flex;
+        gap: 0.5rem;
+        font-size: 0.74rem;
+        align-items: baseline;
+      }
+
+      .modal-label {
+        color: #8b949e;
+        min-width: 6.5rem;
+        flex-shrink: 0;
+      }
+
+      .modal-value {
+        color: #e6edf3;
+        word-break: break-word;
+      }
+
+      .modal-value--mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+        cursor: default;
+      }
+
+      .modal-value--emph {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #f5a623;
+      }
+
+      .modal-footnote {
+        font-size: 0.66rem;
+        color: #6e7681;
+        line-height: 1.4;
+        margin: 0.7rem 0 0;
+      }
+
+      .modal-thumb {
+        margin-top: 0.8rem;
+      }
+
+      .modal-thumb-status {
+        font-size: 0.72rem;
+        color: #8b949e;
+      }
+
+      .modal-thumb-unavailable {
+        color: #6e7681;
+        font-style: italic;
+      }
+
+      .modal-thumb-img {
+        width: 100%;
+        display: block;
+        border-radius: 4px;
+        border: 1px solid #30363d;
+        margin-bottom: 0.35rem;
+      }
+
+      .modal-stac-link {
+        font-size: 0.68rem;
+        color: #58a6ff;
+        text-decoration: none;
+        display: block;
+      }
+      .modal-stac-link:hover { text-decoration: underline; }
+
+      /* ── Export section ── */
+
+      .export-check-row {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        color: #8b949e;
+      }
+
+      .export-check-row input[type="checkbox"] {
+        accent-color: #1f6feb;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+
+      .export-check-row label {
+        cursor: pointer;
+        line-height: 1.3;
+      }
+
+      /* ── Reference picker (floating card over map) ── */
+
+      .ref-picker {
+        position: absolute;
+        width: 200px;
+        background: rgba(13, 17, 23, 0.97);
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 0.65rem 0.75rem;
+        font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+        font-size: 0.78rem;
+        color: #e6edf3;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.65);
+        z-index: 20;
+        pointer-events: all;
+        opacity: 0;
+        transform: translateY(4px);
+        transition: opacity 0.18s ease, transform 0.18s ease;
+      }
+
+      .ref-picker--visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .ref-picker--success {
+        border-color: #3fb950;
+      }
+
+      .ref-picker-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.4rem;
+      }
+
+      .ref-picker-title {
+        font-size: 0.62rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+      }
+
+      .ref-picker-close {
+        background: none;
+        border: none;
+        color: #6e7681;
+        font-size: 1rem;
+        line-height: 1;
+        padding: 0;
+        cursor: pointer;
+        font-family: inherit;
+        transition: color 0.1s;
+      }
+
+      .ref-picker-close:hover { color: #e6edf3; }
+
+      .ref-picker-location {
+        font-size: 0.72rem;
+        color: #58a6ff;
+        margin-bottom: 0.55rem;
+        letter-spacing: 0.01em;
+      }
+
+      .ref-picker-label {
+        font-size: 0.6rem;
+        color: #6e7681;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.25rem;
+      }
+
+      .ref-picker-select {
+        font-family: inherit;
+        font-size: 0.78rem;
+        background: #161b22;
+        color: #e6edf3;
+        border: 1px solid #30363d;
+        border-radius: 4px;
+        padding: 0.3rem 0.45rem;
+        width: 100%;
+        outline: none;
+        margin-bottom: 0.55rem;
+        cursor: pointer;
+      }
+
+      .ref-picker-select:focus { border-color: #58a6ff; }
+
+      .ref-picker-fetch {
+        font-family: inherit;
+        font-size: 0.78rem;
+        background: #1f6feb;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 0.38rem 0;
+        width: 100%;
+        cursor: pointer;
+        transition: background 0.12s;
+      }
+
+      .ref-picker-fetch:not(:disabled):hover { background: #388bfd; }
+      .ref-picker-fetch:disabled { opacity: 0.5; cursor: default; }
+
+      .ref-picker-status {
+        font-size: 0.68rem;
+        margin-top: 0.4rem;
+        line-height: 1.4;
+        padding: 0.25rem 0.35rem;
+        border-radius: 3px;
+      }
+
+      .ref-picker-status--loading {
+        color: #8b949e;
+        background: #161b22;
+      }
+
+      .ref-picker-status--error {
+        color: #f85149;
+        background: #1a0e0e;
+        border: 1px solid #3d1a1a;
+      }
+
+      .ref-picker-status--ok {
+        color: #3fb950;
+        background: #0d1f10;
+      }
+
+      /* ── About button ── */
+
+      .about-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 1px solid #30363d;
+        background: #161b22;
+        color: #8b949e;
+        font-size: 0.65rem;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0;
+        vertical-align: middle;
+        margin-left: 0.4rem;
+        transition: border-color 0.12s, color 0.12s;
+        line-height: 1;
+        flex-shrink: 0;
+      }
+
+      .about-btn:hover {
+        border-color: #58a6ff;
+        color: #58a6ff;
+        background: #0c1825;
+      }
+
+      /* ── About modal ── */
+
+      .about-modal-card {
+        position: relative;
+        width: min(620px, calc(100vw - 2rem));
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+        padding: 1.5rem 1.75rem 1.75rem;
+        font-size: 0.82rem;
+        line-height: 1.6;
+      }
+
+      .about-modal-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 1.1rem;
+        gap: 1rem;
+      }
+
+      .about-modal-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #58a6ff;
+        letter-spacing: 0.03em;
+        line-height: 1.2;
+      }
+
+      .about-modal-tagline {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin-top: 0.3rem;
+      }
+
+      .about-section {
+        margin-bottom: 1.1rem;
+      }
+
+      .about-section h3 {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      .about-section p {
+        color: #c9d1d9;
+        margin-bottom: 0.5rem;
+      }
+
+      .about-section p:last-child { margin-bottom: 0; }
+
+      .about-section strong { color: #e6edf3; }
+
+      .about-score-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.78rem;
+        margin-top: 0.4rem;
+      }
+
+      .about-score-table th {
+        text-align: left;
+        color: #8b949e;
+        font-weight: 600;
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem 0.25rem 0;
+        border-bottom: 1px solid #21262d;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+      }
+
+      .about-score-table td {
+        padding: 0.3rem 0.5rem 0.3rem 0;
+        border-bottom: 1px solid #161b22;
+        vertical-align: top;
+        color: #c9d1d9;
+      }
+
+      .about-score-table td:first-child {
+        color: #f5a623;
+        font-weight: 600;
+        white-space: nowrap;
+        min-width: 6rem;
+      }
+
+      .about-footer {
+        margin-top: 1.2rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid #21262d;
+        font-size: 0.7rem;
+        color: #6e7681;
+        line-height: 1.5;
+      }
+
+      .about-footer a {
+        color: #58a6ff;
+        text-decoration: none;
+      }
+
+      .about-footer a:hover { text-decoration: underline; }
+
+      /* ── Utilities ── */
+
+      .hidden { display: none !important; }
+
+      .hint {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin-top: 0.4rem;
+        line-height: 1.4;
+      }
+
+      .field-label {
+        font-size: 0.72rem;
+        color: #8b949e;
+        margin-bottom: 0.3rem;
+      }
+
+      /* ── Help / About panel ── */
+
+      details.help-panel {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #21262d;
+      }
+
+      details.help-panel > summary {
+        font-size: 0.7rem;
+        color: #8b949e;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        user-select: none;
+      }
+
+      details.help-panel > summary::-webkit-details-marker { display: none; }
+
+      details.help-panel > summary::before {
+        content: '▶';
+        font-size: 0.55rem;
+        display: inline-block;
+        transition: transform 0.15s;
+        color: #6e7681;
+      }
+
+      details[open].help-panel > summary::before {
+        transform: rotate(90deg);
+      }
+
+      .help-body {
+        margin-top: 0.7rem;
+        font-size: 0.7rem;
+        color: #8b949e;
+        line-height: 1.55;
+      }
+
+      .help-body p { margin-bottom: 0.5rem; }
+      .help-body p:last-child { margin-bottom: 0; }
+      .help-body strong { color: #c9d1d9; }
+
+      .help-coverage-note {
+        font-size: 0.68rem;
+        color: #6e7681;
+        border-left: 2px solid #30363d;
+        padding-left: 0.5rem;
+        margin-top: 0.4rem;
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-CoYXkoBH.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-B-YMMjus.css">
+  </head>
+  <body>
+    <div id="app">
+
+      <!-- ── Left control panel ── -->
+      <div id="panel">
+
+        <div class="panel-header">
+          <h1 style="display:flex;align-items:center">Kiln <button id="about-btn" class="about-btn" title="What is this?">?</button></h1>
+          <p class="subtitle">Satellite embedding similarity search</p>
+          <p id="app-status">Initialising…</p>
+        </div>
+
+        <!-- Navigate: jump to coordinates -->
+        <div class="panel-section">
+          <h2>Navigate</h2>
+          <div class="input-row">
+            <input id="coord-input" type="text" placeholder="Search location…" />
+            <button id="coord-go" class="btn-primary">Go</button>
+          </div>
+        </div>
+
+        <!-- Draw: activate rectangle drawing -->
+        <div class="panel-section">
+          <h2>Area</h2>
+          <button id="draw-btn" class="btn-draw">Draw area</button>
+          <div class="button-row" style="margin-top: 0.4rem;">
+            <button id="clear-btn" class="btn-danger" disabled>Clear</button>
+          </div>
+          <p class="hint" id="draw-hint">Click Draw, then drag a rectangle on the map. You can navigate anywhere in the world — areas without data yet show a clear message instead of an error.</p>
+        </div>
+
+        <!-- Confirm: period selector + cost + load button — hidden until area drawn -->
+        <div id="confirm-panel" class="hidden">
+          <h2>Load data</h2>
+          <p class="field-label">Time period</p>
+          <select id="period-select"></select>
+          <p id="cost-text"></p>
+          <div class="button-row">
+            <button id="load-btn" class="btn-primary" disabled>Load</button>
+            <button id="clear-area-btn" class="btn-secondary">Clear area</button>
+          </div>
+        </div>
+
+        <!-- Progress: shown during embedding fetch -->
+        <div id="progress-wrap" class="panel-section hidden">
+          <div id="progress-bar-track">
+            <div id="progress-bar"></div>
+          </div>
+          <p id="progress-label"></p>
+        </div>
+
+        <!-- Temporal analysis: timeline chart — hidden until a reference chip is selected -->
+        <div id="temporal-section" class="hidden">
+          <h2>Temporal analysis</h2>
+          <p id="temporal-baseline-info"></p>
+          <div id="timeline-chart-container"></div>
+          <p id="temporal-status"></p>
+          <button id="probe-all-periods-btn" class="btn-secondary" disabled style="width:100%;font-size:0.72rem">Probe all periods</button>
+        </div>
+
+        <!-- Analysis mode: similarity vs change detection -->
+        <div id="analysis-mode-section" class="panel-section">
+          <h2>Analysis mode</h2>
+          <div class="mode-toggle">
+            <button id="mode-similarity-btn" class="mode-btn active" type="button">Similarity</button>
+            <button id="mode-change-btn" class="mode-btn" type="button">Change</button>
+            <button id="mode-probe-btn" class="mode-btn" type="button">Concept</button>
+          </div>
+        </div>
+
+        <!-- Concept probe: label examples, train a linear probe, score the region — hidden unless in probe mode -->
+        <div id="probe-section" class="panel-section hidden">
+          <h2>Concept probe</h2>
+          <p class="change-help">Teach the tool a concept by example. Paint chips that <em>are</em> the thing you want (e.g. a solar farm) and chips that are <em>not</em>, then train. Kiln fits a linear classifier on the embeddings and scores every loaded chip by how well it matches.</p>
+          <p class="field-label">Brush — click chips on the map to label them</p>
+          <div class="mode-toggle probe-brush-toggle">
+            <button id="probe-positive-btn" class="mode-btn probe-brush-pos active" type="button">+ Positive</button>
+            <button id="probe-negative-btn" class="mode-btn probe-brush-neg" type="button">− Negative</button>
+          </div>
+          <p class="hint" id="probe-brush-hint">Shift-click assigns the opposite class. Click a labeled chip again to remove its label.</p>
+          <p id="probe-counts" class="change-status">Positive: 0 · Negative: 0</p>
+          <div class="export-check-row" style="margin-top:0.5rem">
+            <input id="probe-exclude-training-chk" type="checkbox" />
+            <label for="probe-exclude-training-chk">Show only held-out regions (exclude regions I labeled in)</label>
+          </div>
+          <div class="threshold-row" style="margin-top:0.5rem">
+            <label for="probe-threshold-slider">Min match</label>
+            <input id="probe-threshold-slider" type="range" min="0" max="100" value="50" />
+            <span id="probe-threshold-value">50%</span>
+          </div>
+          <button id="probe-train-btn" class="btn-primary" type="button" disabled style="width:100%;margin-top:0.4rem">Train &amp; score region</button>
+          <button id="probe-clear-labels-btn" class="btn-secondary" type="button" style="width:100%;margin-top:0.4rem;font-size:0.72rem">Clear labels</button>
+          <p id="probe-status" class="change-status"></p>
+        </div>
+
+        <!-- Change detection: compare two loaded periods per cell — hidden in similarity mode -->
+        <div id="change-section" class="panel-section hidden">
+          <h2>Change detection</h2>
+          <p class="change-help">Draw one area, pick a before and after period, then Load &amp; compare. Each cell is shaded by how much it changed between the two periods.</p>
+          <label class="change-period-label" for="change-baseline-select">Before</label>
+          <select id="change-baseline-select"></select>
+          <label class="change-period-label" for="change-compare-select">After</label>
+          <select id="change-compare-select"></select>
+          <button id="change-swap-btn" class="btn-secondary" type="button" disabled style="width:100%;margin-top:0.4rem;font-size:0.72rem">Swap before / after</button>
+          <div class="threshold-row" style="margin-top:0.5rem">
+            <label for="change-threshold-slider">Min change</label>
+            <input id="change-threshold-slider" type="range" min="0" max="100" value="30" />
+            <span id="change-threshold-value">30%</span>
+          </div>
+          <button id="change-compute-btn" class="btn-primary" type="button" disabled style="width:100%;margin-top:0.4rem">Load &amp; compare</button>
+          <p id="change-seasonality-hint" class="change-hint"></p>
+          <p id="change-status" class="change-status"></p>
+
+          <!-- Change-analog search: rank cells by how similarly they changed -->
+          <div id="change-analog-block" class="hidden">
+            <div class="change-analog-sep"></div>
+            <p class="change-help">Find cells that changed the <em>same way</em> (e.g. the same transition). Click a changed cell on the map or in the list, then search.</p>
+            <p id="change-analog-selected" class="change-status">No cell selected.</p>
+            <button id="change-analog-btn" class="btn-secondary" type="button" disabled style="width:100%">Find similar changes</button>
+            <button id="change-analog-back-btn" class="btn-secondary hidden" type="button" style="width:100%;margin-top:0.4rem">Back to change magnitude</button>
+          </div>
+        </div>
+
+        <!-- Similarity: reference info + threshold slider — hidden until a chip is clicked -->
+        <div id="similarity-section" class="panel-section hidden">
+          <h2>Similarity</h2>
+          <div id="reference-info">Click a chip on the map to set a reference.</div>
+          <div class="threshold-row">
+            <label for="threshold-slider">Min score</label>
+            <input id="threshold-slider" type="range" min="0" max="100" value="50" />
+            <span id="threshold-value">50%</span>
+          </div>
+          <button id="clear-reference-btn" class="btn-secondary" style="width:100%">Clear reference</button>
+        </div>
+
+        <!-- Results: ranked matches — hidden until similarity search runs -->
+        <div id="results-section" class="hidden">
+          <h2>Top matches</h2>
+          <div id="results-reference"></div>
+          <div id="results-list"></div>
+        </div>
+
+        <!-- Regions: loaded search regions with per-region release — hidden until first load -->
+        <div id="regions-section" class="hidden">
+          <h2>Loaded regions</h2>
+          <div id="regions-list"></div>
+        </div>
+
+        <!-- Export: GeoJSON, CSV, session save/load -->
+        <div id="export-section" class="panel-section">
+          <h2>Export</h2>
+          <div class="export-check-row">
+            <input id="export-threshold-chk" type="checkbox" checked />
+            <label for="export-threshold-chk">Only matches above threshold</label>
+          </div>
+          <div class="button-row" style="margin-top:0.4rem">
+            <button id="export-geojson-btn" class="btn-secondary" disabled title="Export chips as GeoJSON">GeoJSON</button>
+            <button id="export-csv-btn" class="btn-secondary" disabled title="Export chips as CSV">CSV</button>
+          </div>
+          <div class="button-row" style="margin-top:0.4rem">
+            <button id="export-session-btn" class="btn-secondary" disabled title="Save query state to JSON">Save session</button>
+            <button id="import-session-btn" class="btn-secondary" title="Load a saved session JSON">Load session</button>
+          </div>
+        </div>
+
+        <!-- Hidden file input for session import (programmatically clicked) -->
+        <input id="session-file-input" type="file" accept=".json,application/json" style="display:none" />
+
+        <!-- How it works: collapsible explanation of cost model and coverage -->
+        <details class="help-panel">
+          <summary>How it works</summary>
+          <div class="help-body">
+            <p><strong>What this does:</strong> finds satellite locations that look similar to a site you pick, using precomputed <a href="https://clay-foundation.github.io/model/" target="_blank" rel="noopener" style="color:#58a6ff;text-decoration:none">Clay foundation-model</a> embeddings over Sentinel-2 imagery.</p>
+            <p><strong>Cost model:</strong> each parquet file is split into row groups of roughly <strong>126 MB</strong> compressed. The tool fetches only the row groups whose bounding box overlaps your drawn area — nothing is downloaded until you confirm the cost estimate shown in the Load panel.</p>
+            <p><strong>Coverage:</strong> the dataset is populated incrementally. The Americas and Pacific are well-covered; other regions may show "no data available" as more tiles are added. A missing tile is normal — not a tool error.</p>
+            <p><strong>Similarity scores</strong> are cosine similarity in embedding space. A score of 1.0 means visually identical; lower scores mean less similar. Chips below the threshold slider are hidden from the map but remain in memory.</p>
+            <p class="help-coverage-note">All computation runs in your browser. The only outbound traffic is HTTP range requests to public cloud storage — no data leaves your machine.</p>
+          </div>
+        </details>
+
+        <!-- Status bar -->
+        <div id="status-bar">
+          <span id="chip-count">No chips loaded</span>
+          <span id="memory-use"></span>
+          <span id="session-total"></span>
+          <span id="memory-warn"></span>
+        </div>
+
+      </div>
+
+      <!-- ── Map ── -->
+      <div id="map"></div>
+
+      <!-- Coordinate readout overlaid on map -->
+      <div id="coord-readout"></div>
+
+      <!-- ── About modal ── -->
+      <div id="about-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+        <div class="about-modal-card">
+          <div class="about-modal-header">
+            <div>
+              <div class="about-modal-title" id="about-modal-title">Kiln</div>
+              <div class="about-modal-tagline">Satellite embedding similarity &amp; change search, powered by Clay AI</div>
+            </div>
+            <button id="about-close-btn" class="modal-close" title="Close" aria-label="Close">&times;</button>
+          </div>
+
+          <div class="about-section">
+            <h3>What is this tool?</h3>
+            <p>Kiln is a browser-based geospatial intelligence tool that lets you search for satellite locations that look like a place you choose — or detect where the Earth's surface has changed between two dates. Everything runs in your browser; the only network traffic is range requests to a public dataset hosted on <strong>Source Cooperative</strong>.</p>
+            <p>It was built for investigative journalism, environmental monitoring, and remote-sensing research — tasks where you need to find analogous facilities, map a land-cover transition, or scan a region for unusual change without writing any code.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>What are Clay embeddings?</h3>
+            <p><strong>Clay</strong> is an open-source Earth-observation foundation model trained by LGND AI on hundreds of millions of satellite tiles. Clay v1.5, the version used here, is a 632-million-parameter Vision Transformer that ingests Sentinel-2 multispectral imagery together with location and timestamp metadata and outputs a <strong>256-dimensional embedding</strong> — a compact numeric fingerprint that mathematically encodes what a place looks like at a given moment.</p>
+            <p>The embeddings capture high-level land surface characteristics — vegetation density, urban form, water bodies, bare earth, agricultural patterns — without any manual labeling. LGND AI applied Clay v1.5 across the full global Sentinel-2 archive and published the result as an open dataset organized on the MajorTOM 1280-meter grid, with coverage of two snapshots: June 2024 and June 2025. A third snapshot was added in June 2026.</p>
+            <p>Because similar-looking places produce similar embeddings, you can find global matches to any reference location by comparing embedding vectors — no training, no labels, no GPU required.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>What can you do with it?</h3>
+            <p><strong>Similarity search:</strong> draw an area, load its embeddings, click a chip on the map as your reference site. Kiln instantly ranks every loaded chip by how similar it is to your reference. Use this to find industrial facilities that match a known type, identify terrain analogues, or locate patterns of interest across a region.</p>
+            <p><strong>Change detection:</strong> load the same area for two different time periods, switch to Change detection mode, and compute how much each cell shifted between the two snapshots. Cells are colored by magnitude of change in embedding space — a reliable proxy for land-cover transitions, construction, deforestation, or flooding.</p>
+            <p><strong>Change-analog search:</strong> after a change run, click any changed cell and search for everywhere that underwent the <em>same kind</em> of transition — useful for mapping a process (e.g. vegetation → bare earth) across a wide region.</p>
+            <p><strong>Concept probe:</strong> teach the tool a concept by example. Switch to Concept mode, paint a handful of chips that <em>are</em> the thing you're after (e.g. a tailings pond) and a handful that are <em>not</em>, then train. Kiln fits a small linear classifier (logistic regression) on the embeddings in your browser in milliseconds and scores every loaded chip by how well it matches the concept you defined — turning "similar to this one place" into "matches this idea". Tick <em>Show only held-out regions</em> to train on one region and evaluate on another for an honest test.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>How to interpret results</h3>
+            <p>Scores are <strong>cosine similarity</strong> between two 256-dimensional unit vectors. A score of 1.0 means the two chips are pointing in exactly the same direction in embedding space — essentially identical land cover. Use the table below as a rough guide:</p>
+            <table class="about-score-table">
+              <thead>
+                <tr><th>Score range</th><th>What it means</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>0.92 – 1.00</td><td>Very high similarity — near-identical land surface character. Strong match.</td></tr>
+                <tr><td>0.80 – 0.91</td><td>High similarity — same broad land-cover class with noticeable variation.</td></tr>
+                <tr><td>0.65 – 0.79</td><td>Moderate — related but distinct character. Worth reviewing.</td></tr>
+                <tr><td>&lt; 0.65</td><td>Likely dissimilar — treat as a weak or coincidental match.</td></tr>
+              </tbody>
+            </table>
+            <p style="margin-top:0.5rem">Treat scores as <strong>relative rankings</strong> within a result set, not absolute thresholds. The default slider filters out chips below 50 % — adjust it to widen or narrow the result set. For change detection, scores represent cosine distance (how much the embedding shifted), so higher means more change.</p>
+          </div>
+
+          <div class="about-footer">
+            Made through Claude by <strong>Guillen Torres</strong>. Comments? <a href="mailto:info@osinv.org">info@osinv.org</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <script>
+      (function () {
+        const modal = document.getElementById('about-modal');
+        const openBtn = document.getElementById('about-btn');
+        const closeBtn = document.getElementById('about-close-btn');
+        function open() { modal.classList.remove('hidden'); }
+        function close() { modal.classList.add('hidden'); }
+        openBtn.addEventListener('click', open);
+        closeBtn.addEventListener('click', close);
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+      })();
+    </script>
+  </body>
+</html>

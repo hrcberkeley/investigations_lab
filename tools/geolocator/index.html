@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="referrer" content="strict-origin-when-cross-origin"/>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.peakfinder.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://server.arcgisonline.com https://mt1.google.com https://*.basemaps.cartocdn.com https://api.mapbox.com; connect-src 'self' https://lz4.overpass-api.de https://overpass-api.de https://overpass.kumi.systems https://api.mapbox.com https://www.peakfinder.com stun:; frame-src https://www.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"/>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%8D%3C/text%3E%3C/svg%3E"/>
+  <title>Geolocation Verification Tool</title>
+
+  <!-- Leaflet core with rotation support -->
+  <link rel="stylesheet" href="assets/vendor/leaflet/leaflet.css"/>
+  <script src="assets/vendor/leaflet/leaflet.js"></script>
+
+  <!-- Leaflet Rotation Plugin -->
+  <script src="assets/vendor/leaflet-rotate/leaflet-rotate-src.js"></script>
+
+  <!-- Leaflet Geoman for drawing -->
+  <link rel="stylesheet" href="assets/vendor/leaflet-geoman/leaflet-geoman.css"/>
+  <script src="assets/vendor/leaflet-geoman/leaflet-geoman.min.js"></script>
+
+  <!-- Turf.js for angle calculations -->
+  <script src="assets/vendor/turf/turf.min.js"></script>
+
+  <!-- Leaflet Geocoder -->
+  <link rel="stylesheet" href="assets/vendor/leaflet-control-geocoder/Control.Geocoder.css"/>
+  <script src="assets/vendor/leaflet-control-geocoder/Control.Geocoder.js"></script>
+
+  <!-- MarkerCluster -->
+  <link rel="stylesheet" href="assets/vendor/leaflet-markercluster/MarkerCluster.css"/>
+  <link rel="stylesheet" href="assets/vendor/leaflet-markercluster/MarkerCluster.Default.css"/>
+  <script src="assets/vendor/leaflet-markercluster/leaflet.markercluster.js"></script>
+
+  <!-- Konva for scene-graph overlays -->
+  <script src="assets/vendor/konva/konva.min.js"></script>
+
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260915.1"/>
+
+  <script src="assets/js/icons.js?v=20260915.1"></script>
+</head>
+<body>
+  <div class="app-container">
+    <div class="content-container">
+      <!-- Map Panel -->
+      <div class="map-panel">
+        <div id="map"></div>
+        <canvas id="mapCanvas"></canvas>
+        <!-- M2: dedicated host for the map drawing overlay. Kept as a sibling of
+             #map (NOT inside it) so Leaflet never reaps it on pane re-init.
+             pointer-events:none on the host; the Konva overlay inside toggles its
+             own pointer-events. No z-index here → no stacking context → the inner
+             overlay (z~900) stacks globally below Leaflet controls (z 1000). -->
+        <div id="mapOverlayHost"></div>
+        
+        <!-- 3D View Container -->
+        <div id="view3DContainer">
+          <div id="mapbox3DContainer"></div>
+          <canvas id="view3DCanvas"></canvas>
+        </div>
+        
+        <!-- PeakFinder Container -->
+        <div id="peakFinderContainer">
+          <canvas id="pfcanvas" oncontextmenu="event.preventDefault()"></canvas>
+          <div id="pfcanvasprogress">
+            <div class="spinner"></div>
+            <p style="margin-top:1rem;text-align:center;color:#333">Loading PeakFinder...</p>
+          </div>
+        </div>
+        
+        <!-- Street View Container -->
+        <div id="streetViewContainer">
+          <iframe id="streetViewPano" frameborder="0" style="border:0" allowfullscreen></iframe>
+        </div>
+        
+        <!-- View Toggle Button -->
+        <button class="view-toggle-btn" id="viewToggleBtn" onclick="toggleMapView()" style="display:none">
+          <span id="viewToggleIcon">🗺️</span>
+          <span id="viewToggleText">Back to 2D Map</span>
+        </button>
+
+        <!-- Map Grid Menu -->
+        <div class="map-grid-menu" id="mapGridMenu" hidden tabindex="-1" aria-hidden="true">
+          <div class="map-grid-menu__title">Grid Overlay</div>
+          <div class="map-grid-control" id="mapGridControls">
+            <button class="map-grid-toggle" id="mapGridToggle" type="button" aria-pressed="false">Show Grid</button>
+            <label class="map-grid-size" for="mapGridSize">
+              <span>Cell (km)</span>
+              <input id="mapGridSize" type="number" min="0.1" step="0.1" value="1" inputmode="decimal"/>
+            </label>
+            <label class="map-grid-size" for="mapGridThickness">
+              <span>Thickness (px)</span>
+              <input id="mapGridThickness" type="range" min="1" max="5" step="1" value="1"/>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Street View Controls -->
+        <div class="street-view-controls" id="streetViewControls">
+          <button class="street-view-btn" onclick="showStreetView()">🔍 Google Street View</button>
+          <button class="street-view-btn" onclick="backToMap()">🗺️ Back to Map</button>
+        </div>
+        
+        <!-- Info Bar for 3D View -->
+        <div class="view-info-bar" id="viewInfoBar">
+          <span class="info-item"><span id="view3DDistance">0 km</span></span>
+          <span class="info-item"><span id="view3DBearing">0°</span></span>
+        </div>
+        
+        <!-- Toggle buttons for collapsed panels -->
+        <button class="panel-toggle left" id="sidebarToggle" onclick="toggleSidebar()">
+          🔍 Show Geolocator
+        </button>
+        <button class="panel-toggle right" id="summaryToggle" onclick="toggleSummary()">
+          📊 Show Summary
+        </button>
+
+        <div class="sidebar" id="sidebar">
+          <h2>
+            <span>🔍 Geolocator</span>
+            <div style="display:flex;gap:4px">
+              <button class="help-btn" onclick="showHelp()" title="Show help">?</button>
+              <button class="collapse-btn" onclick="toggleSidebar()" title="Minimize panel">🗕 ◀</button>
+            </div>
+          </h2>
+          
+          <div class="mode-toggle-section">
+            <label>Map Mode</label>
+            <div class="mode-buttons" style="grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr">
+              <button class="mode-btn active" id="placesMode" onclick="setMapMode('places')">📍 Search</button>
+              <button class="mode-btn" id="groundMode" onclick="setMapMode('ground')">📷 Ground</button>
+              <button class="mode-btn" id="drawMode" onclick="setMapMode('draw')">✏️ Draw</button>
+              <button class="mode-btn" id="losMode" onclick="setMapMode('los')">📊 LOS</button>
+              <button class="mode-btn" id="anglesMode" onclick="setMapMode('angles')">📐 Angles</button>
+            </div>
+          </div>
+
+          <div id="placesControls">
+            <label for="radiusSlider" style="margin-top:1rem">
+              Search Radius: <span id="radiusLabel">500</span> m
+            </label>
+            <input id="radiusSlider" type="range" min="100" max="5000" step="100" value="500"/>
+            <p>Click the map to discover nearby places</p>
+            
+            <div class="filter-section">
+              <h3>
+                <span>Filter Categories</span>
+                <span style="font-size:.7rem;color:#999" id="filterCount">(24/24)</span>
+              </h3>
+              <div class="filter-controls">
+                <button class="filter-btn" onclick="selectAllFilters()">Select All</button>
+                <button class="filter-btn" onclick="deselectAllFilters()">Clear All</button>
+              </div>
+              <div class="filter-grid" id="filterGrid"></div>
+            </div>
+          </div>
+
+          <div id="groundControls" style="display:none">
+            <p style="margin-top:1rem">Click the map to select a location for ground-level imagery</p>
+
+            <div style="margin-top:1rem;padding:1rem;background:#f8f9fa;border-radius:8px;border-left:3px solid #9D2235">
+              <p style="font-size:.85rem;margin-bottom:.5rem;font-weight:600">Available Views:</p>
+              <ul style="font-size:.8rem;color:#666;line-height:1.5;padding-left:1.2rem">
+                <li><strong>Google Street View:</strong> 360° panoramas from Google</li>
+              </ul>
+              <p style="font-size:.75rem;color:#999;margin-top:.5rem;font-style:italic">
+                Note: Coverage varies by location.
+              </p>
+            </div>
+
+            <div class="api-settings" id="googleStreetViewSettings">
+              <div class="api-settings__header">
+                <h3>Google Street View Access</h3>
+              </div>
+              <p class="api-settings__intro">
+                Add your Google Street View Embed API key to enable in-app Street View. The key is stored locally in your browser.
+              </p>
+              <label for="googleStreetViewApiKey" class="api-settings__label">Embed API key</label>
+              <input type="password" id="googleStreetViewApiKey" class="api-settings__input" placeholder="AIza..." autocomplete="off" spellcheck="false" onchange="saveGoogleStreetViewApiKey(this.value)"/>
+            </div>
+          </div>
+
+          <div id="anglesControls" style="display:none">
+            <p style="margin-top:1rem">Draw a polygon area to analyze road intersections</p>
+            
+            <fieldset style="margin-top:.8rem;border:1px solid #e0e0e0;border-radius:6px;padding:.8rem">
+              <legend style="font-weight:600;font-size:.85rem;padding:0 .4rem">Angle Mode</legend>
+              <label style="display:flex;align-items:center;gap:.5rem;margin:.3rem 0">
+                <input type="radio" name="angleMode" value="90" checked onchange="updateAngleMode()">
+                <span style="font-size:.85rem">Normalized (≤90°)</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:.5rem;margin:.3rem 0">
+                <input type="radio" name="angleMode" value="180" onchange="updateAngleMode()">
+                <span style="font-size:.85rem">Full (≤180°)</span>
+              </label>
+            </fieldset>
+
+            <label style="margin-top:1rem">
+              Angle Range (degrees):
+              <div style="display:flex;gap:.5rem;align-items:center;margin-top:.3rem">
+                <input id="minAngle" type="number" value="80" step="1" min="0" 
+                       style="width:70px;padding:.4rem;border:1px solid #ddd;border-radius:4px;font-size:.85rem">
+                <span>—</span>
+                <input id="maxAngle" type="number" value="90" step="1" min="0"
+                       style="width:70px;padding:.4rem;border:1px solid #ddd;border-radius:4px;font-size:.85rem">
+              </div>
+              <small id="rangeHint" style="color:#666;display:block;margin-top:.3rem;font-size:.75rem">Allowed: 0—90°</small>
+            </label>
+
+            <details style="margin-top:1rem;border:1px solid #e0e0e0;border-radius:6px;padding:.8rem">
+              <summary style="cursor:pointer;font-weight:600;font-size:.85rem">Highway Filter</summary>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.8rem">
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="motorway" checked> motorway
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="trunk" checked> trunk
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="primary" checked> primary
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="secondary" checked> secondary
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="tertiary" checked> tertiary
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="unclassified" checked> unclassified
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="residential" checked> residential
+                </label>
+                <label style="display:flex;align-items:center;gap:.3rem;font-size:.75rem">
+                  <input type="checkbox" class="hwy" value="service" checked> service
+                </label>
+              </div>
+            </details>
+
+            <label style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;font-size:.85rem">
+              <input id="showAllRoads" type="checkbox"> 
+              <span>Show all roads (context)</span>
+            </label>
+
+            <div style="display:grid;grid-template-columns:1fr;gap:.5rem;margin-top:1rem">
+              <button class="filter-btn" onclick="fetchAnglesData()" 
+                      style="padding:.7rem;font-size:.85rem;font-weight:600">
+                🔍 Fetch & Filter
+              </button>
+              <button class="filter-btn" onclick="downloadIntersections()" 
+                      style="padding:.5rem;font-size:.8rem">
+                📥 Download Intersections
+              </button>
+              <button class="filter-btn" onclick="downloadSegments()" 
+                      style="padding:.5rem;font-size:.8rem">
+                📥 Download Segments
+              </button>
+            </div>
+
+            <div style="margin-top:1rem;padding:1rem;background:#f8f9fa;border-radius:8px;border-left:3px solid #9D2235">
+              <p style="font-size:.85rem;margin-bottom:.5rem;font-weight:600">How to use:</p>
+              <ol style="font-size:.8rem;color:#666;line-height:1.5;padding-left:1.2rem">
+                <li>Use the draw tool (top-right) to create a polygon</li>
+                <li>Adjust angle range and highway filters</li>
+                <li>Click "Fetch & Filter"</li>
+                <li>Red lines show matching road segments</li>
+                <li>Blue dots show intersection points</li>
+              </ol>
+            </div>
+          </div>
+
+          <div id="losControls" style="display:none">
+            <div style="margin-top:1rem">
+              <label>Visualization Mode</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.5rem">
+                <button class="mode-btn active" id="mapboxLOSMode" onclick="setLOSMode('mapbox')">
+                  🗻 Mapbox 3D
+                </button>
+                <button class="mode-btn" id="peakfinderLOSMode" onclick="setLOSMode('peakfinder')">
+                  ⛰️ PeakFinder
+                </button>
+              </div>
+            </div>
+            
+            <div style="margin-top:1rem">
+              <label>Mapbox Access Token 
+                <a href="https://account.mapbox.com/access-tokens/" target="_blank" rel="noopener" 
+                   style="color:#9D2235;text-decoration:none;font-size:1rem" title="Get your free Mapbox token">ℹ</a>
+              </label>
+              <input type="text" id="mapboxToken" placeholder="pk.eyJ..." 
+                     style="width:100%;padding:.5rem;border:2px solid #ddd;border-radius:6px;font-size:.85rem;margin-top:.3rem"
+                     onchange="saveMapboxToken()"/>
+              <p style="font-size:.7rem;color:#666;margin-top:.3rem">
+                Required for Mapbox 3D mode. Free tier: 100k requests/month.
+              </p>
+            </div>
+            
+            <div style="margin-top:1rem;padding:1rem;background:#f8f9fa;border-radius:8px;border-left:3px solid #9D2235">
+              <p style="font-size:.85rem;margin-bottom:.5rem;font-weight:600">How to use:</p>
+              <ol style="font-size:.8rem;color:#666;line-height:1.5;padding-left:1.2rem">
+                <li>Choose visualization mode above</li>
+                <li>Enter Mapbox token (for 3D mode only)</li>
+                <li>Click Point A (observer position)</li>
+                <li>Click Point B (what you're looking at)</li>
+                <li>View panoramic horizon or 3D terrain</li>
+              </ol>
+            </div>
+            
+            <div id="losStatus" style="margin-top:1rem;padding:.6rem;background:#f0f4ff;border-radius:6px;text-align:center;font-size:.85rem;color:#9D2235">
+              Choose mode and click two points
+            </div>
+
+            <button class="filter-btn" onclick="clearLineOfSight()" style="margin-top:1rem;width:100%">
+              Clear Points
+            </button>
+          </div>
+          
+          <div id="status">Ready</div>
+
+          <div class="layer-toggle">
+            <div class="layer-toggle__header">
+              <label>Map Layer</label>
+            </div>
+            <div class="layer-toggle__buttons">
+              <button class="toggle-btn active" id="layerStreet" onclick="setMapLayer('street')">
+                🗺️ Street Map
+              </button>
+              <button class="toggle-btn" id="layerSatellite" onclick="setMapLayer('satellite')">
+                🛰️ ESRI Satellite
+              </button>
+              <button class="toggle-btn" id="layerGoogle" onclick="setMapLayer('google')">
+                🌍 Google Satellite
+              </button>
+              <button class="toggle-btn" id="elevationToggle" onclick="toggleElevationOverlay()">
+                ⛰️ Elevation Overlay (Mapbox)
+              </button>
+              <div id="elevationOpacityControl" style="display:none">
+                <label for="elevationOpacity" style="font-size:.75rem;color:#666">Opacity</label>
+                <input id="elevationOpacity" type="range" min="0" max="100" value="60" oninput="setElevationOpacity(this.value)" />
+                <label for="elevationEnhance" style="font-size:.75rem;color:#666;margin-top:.4rem;display:block">Enhance lines</label>
+                <input id="elevationEnhance" type="range" min="100" max="220" value="135" oninput="setElevationEnhance(this.value)" />
+                <label for="elevationBlend" style="font-size:.75rem;color:#666;margin-top:.4rem;display:block">Blend</label>
+                <select id="elevationBlend" onchange="setElevationBlend(this.value)">
+                  <option value="multiply">Multiply (best on light maps)</option>
+                  <option value="screen">Screen (best on dark/satellite)</option>
+                  <option value="overlay">Overlay</option>
+                  <option value="normal">Normal</option>
+                </select>
+              </div>
+            </div>
+            
+            <p style="font-size:.7rem;color:#999;margin-top:.5rem;line-height:1.3">
+              Note: Google layer works but may require API key for production use
+            </p>
+          </div>
+        </div>
+
+        <!-- Summary Panel -->
+        <div class="summary-panel" id="summaryPanel">
+          <h3>
+            <span>📊 Discovery Summary</span>
+            <button class="collapse-btn" onclick="toggleSummary()" title="Collapse panel">▶</button>
+          </h3>
+          <div class="summary-stats">
+            <div class="stat-card">
+              <div class="number" id="totalPlaces">0</div>
+              <div class="label">Total Places</div>
+            </div>
+            <div class="stat-card" style="background:linear-gradient(135deg,#C5283D,#E84A5F)">
+              <div class="number" id="totalCategories">0</div>
+              <div class="label">Categories</div>
+            </div>
+          </div>
+          <div class="category-breakdown">
+            <h4>Breakdown by Category</h4>
+            <div id="categoryList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resizer -->
+      <div class="resizer" id="resizer" role="separator" tabindex="0" aria-label="Resize map and image panels" aria-orientation="vertical"></div>
+
+      <!-- Image Panel -->
+      <div class="image-panel" id="imagePanel">
+        <!-- Upload Section -->
+        <div class="image-upload-section">
+          <input type="file" id="imageUpload" accept="image/*" multiple style="display:none"/>
+          <button class="upload-btn" onclick="document.getElementById('imageUpload').click()">
+            🖼️ Upload Images
+          </button>
+          <details class="privacy-notice">
+            <summary>Data &amp; privacy</summary>
+            <p>Images and annotations stay in this browser unless you save a project or start live collaboration. Searches and map views send the selected location to the relevant map, imagery, and OpenStreetMap services. Live collaboration uses a public STUN service and exposes each participant's IP address to the other participant. API keys are stored only in this browser for this website.</p>
+          </details>
+        </div>
+        
+        <!-- Layers Panel -->
+        <div class="layers-panel" id="layersPanel">
+          <h4>Image Layers</h4>
+          <div class="layers-list" id="layersList">
+            <p class="no-layers">No layers yet</p>
+          </div>
+        </div>
+        
+        <div class="image-viewer" id="imageViewer">
+          <div class="no-image">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <p>Upload images to begin analysis</p>
+          </div>
+          <div class="image-canvas-container">
+            <canvas id="imageCanvas"></canvas>
+          </div>
+        </div>
+
+        <!-- Drawing Toolbar -->
+        <div class="toolbar">
+          <div class="toolbar-section">
+            <span class="toolbar-label">Tools</span>
+            <button class="tool-btn" data-tool="pan" onclick="selectTool('pan')">✋ Pan</button>
+            <button class="tool-btn" data-tool="rect" onclick="selectTool('rect')">▭ Rect</button>
+            <button class="tool-btn" data-tool="circle" onclick="selectTool('circle')">⭕ Circle</button>
+            <button class="tool-btn" data-tool="ellipse" onclick="selectTool('ellipse')">⬭ Ellipse</button>
+            <button class="tool-btn" data-tool="line" onclick="selectTool('line')">─ Line</button>
+            <button class="tool-btn" data-tool="arrow" onclick="selectTool('arrow')">➜ Arrow</button>
+            <button class="tool-btn" data-tool="polygon" onclick="selectTool('polygon')">⬡ Poly</button>
+            <button class="tool-btn" data-tool="freehand" onclick="selectTool('freehand')">✏ Draw</button>
+            <button class="tool-btn" data-tool="note" onclick="selectTool('note')">📝 Note</button>
+            <button class="tool-btn" onclick="addProtractorImage()">📐 Protractor</button>
+          </div>
+
+          <div class="toolbar-section">
+            <span class="toolbar-label">Color</span>
+            <input type="color" id="colorPicker" value="#FF4444" onchange="selectColor(this.value)" 
+                   style="width:40px;height:32px;border:2px solid #ddd;border-radius:6px;cursor:pointer;background:none"/>
+          </div>
+
+          <div class="toolbar-section">
+            <span class="toolbar-label">Style</span>
+            <button class="style-toggle active" id="solidToggle" onclick="toggleLineStyle()">Solid</button>
+            <button class="style-toggle" id="fillToggle" onclick="toggleFill()">Fill</button>
+            <input type="range" id="opacitySlider" min="0" max="100" value="20" 
+                   onchange="updateFillOpacity(this.value)" 
+                   oninput="updateFillOpacity(this.value)"
+                   style="width:60px;height:4px;cursor:pointer;margin-left:8px"
+                   title="Fill Opacity"/>
+            <span id="opacityLabel" style="font-size:.7rem;color:#666;margin-left:4px">20%</span>
+          </div>
+
+          <div class="toolbar-section">
+            <span class="toolbar-label">Width</span>
+            <button class="style-toggle active" data-width="1" onclick="selectLineWidth(1)">1px</button>
+            <button class="style-toggle" data-width="2" onclick="selectLineWidth(2)">2px</button>
+            <button class="style-toggle" data-width="3" onclick="selectLineWidth(3)">3px</button>
+            <button class="style-toggle" data-width="5" onclick="selectLineWidth(5)">5px</button>
+          </div>
+
+          <div class="toolbar-section">
+            <button class="tool-btn" onclick="undoLast()">↶ Undo</button>
+            <button class="tool-btn" onclick="redoLast()">↷ Redo</button>
+            <button class="tool-btn" onclick="clearAll()">🗑️ Clear</button>
+          </div>
+          <div class="toolbar-section">
+            <button class="tool-btn" onclick="downloadProject()">💾 Save Project</button>
+            <button class="tool-btn" onclick="document.getElementById('projectUpload').click()">📂 Load Project</button>
+            <input id="projectUpload" type="file" accept="application/json,.json" hidden onchange="loadProjectFile(this)"/>
+            <button class="tool-btn" type="button" onclick="openCollaboration()">👥 Collaborate</button>
+          </div>
+          <div class="toolbar-section">
+            <button class="tool-btn" id="sunToolsToggle" type="button" onclick="toggleSunToolsPanel()" aria-expanded="false">
+              ☀️ Sun Tools
+            </button>
+          </div>
+        </div>
+
+        <div class="sun-tools-panel" id="sunToolsPanel" aria-hidden="true">
+          <div class="sun-tools-header">
+            <div class="sun-tools-title">
+              <h4>Sun Elevation (Advanced)</h4>
+              <p>Mark height and shadow measurements to estimate the sun elevation. Assign a ground plane if you need perspective correction.</p>
+            </div>
+            <div class="sun-tools-header-actions">
+              <button class="help-btn sun-tools-help" type="button" onclick="showSunToolsHelp()" title="How to use the sun tools" aria-haspopup="dialog" aria-controls="sunHelpOverlay">?</button>
+              <button class="sun-tools-close" type="button" onclick="toggleSunToolsPanel(false)" aria-label="Close sun tools">×</button>
+            </div>
+          </div>
+          <div class="sun-tools-body">
+            <div class="sun-tools-assignments">
+              <button type="button" class="sun-tools-btn" onclick="setSunMeasurementRole('height')">Mark Height Arrow</button>
+              <button type="button" class="sun-tools-btn" onclick="setSunMeasurementRole('shadow')">Mark Shadow Arrow</button>
+              <button type="button" class="sun-tools-btn" onclick="setSunGroundPlane()">Assign Ground Plane</button>
+            </div>
+            <div class="sun-tools-readouts">
+              <div id="sunHeightAssignment">Height arrow: —</div>
+              <div id="sunShadowAssignment">Shadow arrow: —</div>
+              <div id="sunPerspectiveStatus">Perspective correction: Off</div>
+            </div>
+            <label class="sun-tools-input" for="sunActualHeight">
+              <span>Actual object height (optional)</span>
+              <input type="number" id="sunActualHeight" min="0" step="0.01" placeholder="Enter known height"/>
+            </label>
+            <div class="sun-tools-actions">
+              <button type="button" class="sun-tools-btn primary" onclick="calculateSunElevation()">Compute Angle</button>
+              <div class="sun-tools-angle">
+                <span>Sun elevation</span>
+                <strong id="sunAngleValue">—</strong>
+              </div>
+              <button type="button" class="sun-tools-btn subtle" onclick="clearSunMeasurements()">Reset</button>
+            </div>
+            <div class="sun-tools-warnings" role="status">
+              <h5>Notes</h5>
+              <ul id="sunWarnings"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <dialog id="collabDialog" class="collab-dialog" aria-labelledby="collabTitle">
+    <div class="collab-head"><h2 id="collabTitle">Live collaboration</h2><button id="collabClose" type="button" aria-label="Close">×</button></div>
+    <p>Both people keep this page open. Exchange the codes through a trusted channel, then compare the verification number by voice or another trusted channel before sharing the project.</p>
+    <p>A public STUN lookup helps the direct connection and each person can learn the other's IP address. The session is for two people, ends when either browser closes, and does not save automatically. Remote edits clear local Undo history.</p>
+    <div class="collab-roles"><button id="collabHost" type="button">Share my project</button><button id="collabJoin" type="button">Join a project</button></div>
+    <div id="collabHostFlow" hidden>
+      <label for="collabOfferOut">1. Send this invite code</label><textarea id="collabOfferOut" readonly></textarea><button id="collabCopyOffer" type="button">Copy invite</button>
+      <label for="collabAnswerIn">2. Paste the other person's reply code</label><textarea id="collabAnswerIn"></textarea><button id="collabAcceptAnswer" type="button">Connect</button>
+    </div>
+    <div id="collabJoinFlow" hidden>
+      <label for="collabOfferIn">1. Paste the invite code</label><textarea id="collabOfferIn"></textarea><button id="collabAcceptOffer" type="button">Make reply</button>
+      <label for="collabAnswerOut">2. Send this reply code</label><textarea id="collabAnswerOut" readonly></textarea><button id="collabCopyAnswer" type="button">Copy reply</button>
+    </div>
+    <div id="collabVerify" hidden><p>Compare this number with the other person. Continue only if it matches.</p><strong id="collabVerifyCode"></strong><button id="collabConfirm" type="button">We confirmed it matches</button></div>
+    <p id="collabStatus" role="status" aria-live="polite">Choose how to start.</p>
+    <button id="collabDisconnect" type="button" hidden>End session</button>
+  </dialog>
+
+  <!-- Sun Tools Help Overlay -->
+  <div class="sun-help-overlay" id="sunHelpOverlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="sunHelpTitle">
+    <div class="sun-help-content" role="document">
+      <div class="sun-help-header">
+        <h2 id="sunHelpTitle">☀️ Sun Tools Guide</h2>
+        <button class="sun-help-close" type="button" onclick="hideSunToolsHelp()" aria-label="Close sun tools guide">×</button>
+      </div>
+      <div class="sun-help-body">
+        <p>The sun tools convert the relationship between an object's height and its shadow into a solar elevation estimate. Follow these steps to collect accurate measurements:</p>
+        <ol>
+          <li><strong>Mark the height arrow.</strong> Select <em>Mark Height Arrow</em> and draw a line from the base of the object to the top. Use straight edges like flagpoles, trees, or building corners.</li>
+          <li><strong>Mark the shadow arrow.</strong> Choose <em>Mark Shadow Arrow</em> and trace the object's shadow from the base toward the sun. Align the arrow with clear shadow edges for best results.</li>
+          <li><strong>Assign a ground plane (optional).</strong> If the photo is tilted, pick <em>Assign Ground Plane</em> and outline a flat surface to correct the perspective before calculating the angle.</li>
+          <li><strong>Add a real-world height (optional).</strong> Enter a known height to turn the relative measurement into a real-world distance check.</li>
+          <li><strong>Compute the angle.</strong> Click <em>Compute Angle</em> to display the sun's elevation and review any notes or warnings.</li>
+        </ol>
+        <div class="sun-help-examples">
+          <h3>Example Scenarios</h3>
+          <ul>
+            <li><strong>Street scene:</strong> Use a streetlight pole for the height arrow and its shadow on the pavement. If the camera is tilted, assign the road surface as the ground plane.</li>
+            <li><strong>Building facade:</strong> Trace the height along a window edge and the shadow cast on the sidewalk. Enter the building floor height if known to validate the measurement.</li>
+            <li><strong>Landscape photo:</strong> Mark a tree trunk and its shadow. Even without a known height, the computed angle lets you compare against solar ephemeris data for the capture time.</li>
+          </ul>
+          <p class="sun-help-tip">Tip: Keep arrows tight to the object's edges. Short, precise arrows produce more reliable sun angles.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Overlay -->
+  <div class="help-overlay" id="helpOverlay">
+    <div class="help-content">
+      <div class="help-header">
+        <h1 class="help-title">🔍 Geolocator Help</h1>
+        <button class="help-close" onclick="hideHelp()">×</button>
+      </div>
+      
+      <div class="help-section">
+        <h3>🗺️ Getting Started</h3>
+        <p>This tool helps you discover and analyze locations using multiple data sources and visualization modes.</p>
+        
+        <div class="help-feature">
+          <strong>Quick Start:</strong> Click anywhere on the map to search for nearby places, or use the search bar in the top-right corner to find specific locations.
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3>📍 Search Mode</h3>
+        <p>Discover places around any location:</p>
+        <ul>
+          <li><strong>Click the map</strong> to search for places within the selected radius</li>
+          <li><strong>Adjust radius</strong> using the slider (100m to 5km)</li>
+          <li><strong>Filter categories</strong> to focus on specific types of places</li>
+          <li><strong>View results</strong> in the summary panel on the right</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>📐 Angles Mode</h3>
+        <p>Analyze road intersection angles for forensic purposes:</p>
+        <ul>
+          <li><strong>Draw a polygon</strong> using the drawing tools (top-right)</li>
+          <li><strong>Select angle mode</strong>: Normalized (≤90°) or Full (≤180°)</li>
+          <li><strong>Set angle range</strong> to filter specific intersection types</li>
+          <li><strong>Filter highway types</strong> to focus on specific road categories</li>
+          <li><strong>Click Fetch & Filter</strong> to find matching intersections</li>
+          <li><strong>Download results</strong> as GeoJSON for further analysis</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>📷 Ground View Mode</h3>
+        <p>Explore street-level imagery:</p>
+        <ul>
+          <li><strong>Click the map</strong> to select a location</li>
+          <li><strong>Choose Google Street View</strong> for 360° panoramas</li>
+          <li><strong>Open Google Street View</strong> after selecting a ground location</li>
+          <li><strong>Switch between sources</strong> for better coverage</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>✏️ Drawing Tools</h3>
+        <p>Annotate images and maps with professional drawing tools:</p>
+        <ul>
+          <li><strong>Pan Tool:</strong> Move around images and select layers</li>
+          <li><strong>Shapes:</strong> Rectangle, circle, ellipse, line, arrow, polygon</li>
+          <li><strong>Freehand:</strong> Draw custom shapes</li>
+          <li><strong>Sticky Notes:</strong> Click to place draggable text notes anywhere</li>
+          <li><strong>Color Picker:</strong> Choose any color from the full spectrum</li>
+          <li><strong>Fill Control:</strong> Toggle fills on/off and adjust transparency</li>
+          <li><strong>Line Style:</strong> Solid or dashed lines</li>
+          <li><strong>Line Width:</strong> 1px to 5px thickness options</li>
+        </ul>
+        <div class="help-feature">
+          <strong>Sticky Notes:</strong> Select the Note tool and click anywhere on the map or image to place a note. Click and drag the header to move notes. Type directly in the note area. Delete with the × button.
+        </div>
+      </div>
+
+      <div class="help-section">
+        <h3>📊 Line of Sight (LOS)</h3>
+        <p>Analyze visibility between two points with two visualization options:</p>
+        <ul>
+          <li><strong>Choose mode:</strong> Mapbox 3D (requires token) or PeakFinder (no token needed)</li>
+          <li><strong>Click Point A</strong> (observer position)</li>
+          <li><strong>Click Point B</strong> (target location)</li>
+          <li><strong>View terrain:</strong> 3D interactive view or labeled mountain panorama</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🖼️ Image Analysis</h3>
+        <p>Upload and analyze images:</p>
+        <ul>
+          <li><strong>Upload images</strong> using the upload button</li>
+          <li><strong>Layer management</strong> with opacity and scale controls</li>
+          <li><strong>Pan and zoom</strong> for detailed analysis</li>
+          <li><strong>Draw annotations</strong> directly on images</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🎛️ Map Layers</h3>
+        <p>Switch between different map types:</p>
+        <ul>
+          <li><strong>Street Map:</strong> OpenStreetMap for navigation</li>
+          <li><strong>ESRI Satellite:</strong> High-resolution satellite imagery</li>
+          <li><strong>Google Satellite:</strong> Alternative satellite view</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>💡 Tips & Tricks</h3>
+        <ul>
+          <li><strong>Resize panels</strong> by dragging the separator between map and image areas</li>
+          <li><strong>Collapse panels</strong> using the arrow buttons to maximize workspace</li>
+          <li><strong>Undo drawings</strong> with the undo button or clear all with the clear button</li>
+          <li><strong>Rotate map</strong> using the compass control in the bottom-left</li>
+          <li><strong>Zoom to places</strong> by clicking on them in the summary panel</li>
+        </ul>
+      </div>
+
+      <div class="help-section">
+        <h3>🔧 Keyboard Shortcuts</h3>
+        <ul>
+          <li><strong>Mouse wheel:</strong> Zoom in/out</li>
+          <li><strong>Shift + Mouse wheel:</strong> Pan images</li>
+          <li><strong>Double-click:</strong> Reset image zoom</li>
+          <li><strong>Double-click:</strong> Complete polygon drawing</li>
+        </ul>
+      </div>
+
+      <div class="help-section" style="background:#f8f9fa;border-radius:8px;padding:1rem;border-left:3px solid #9D2235">
+        <h3>🐛 Bug Reports & Feedback</h3>
+        <p>Found a bug or have a suggestion? Please report it on our GitHub page:</p>
+        <p style="margin-top:0.5rem">
+          <a href="https://github.com/kolenyo2099/geolocator" target="_blank" rel="noopener" 
+             style="color:#9D2235;font-weight:600;text-decoration:none">
+            github.com/kolenyo2099/geolocator ↗
+          </a>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/ui-feedback.js?v=20260915.1"></script>
+  <script src="assets/js/asset-loader.js?v=20260915.1"></script>
+  <script src="assets/js/map-setup.js?v=20260915.1"></script>
+  <script src="assets/js/grid-overlay.js?v=20260915.1"></script>
+  <script src="assets/js/angles-mode.js?v=20260915.1"></script>
+  <script src="assets/js/places-mode.js?v=20260915.1"></script>
+  <script src="assets/js/resizer.js?v=20260915.2"></script>
+  <script src="assets/js/image-layers.js?v=20260915.1"></script>
+  <script src="assets/js/sticky-notes.js?v=20260915.1"></script>
+  <script src="assets/js/drawing-tools.js?v=20260915.1"></script>
+  <script src="assets/js/image-zoom-pan.js?v=20260915.1"></script>
+  <script src="assets/js/line-of-sight.js?v=20260915.1"></script>
+  <script src="assets/js/street-view.js?v=20260915.1"></script>
+  <script src="assets/js/project-state.js?v=20260915.1"></script>
+  <script src="assets/js/collaboration.js?v=20260915.1"></script>
+
+  <!-- Firefox Browser Check -->
+  <script>
+    (function() {
+      // M5: InstallTrigger was removed from modern Firefox; rely on UA alone.
+      const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+      
+      if (isFirefox) {
+        // Show alert after page loads
+        window.addEventListener('load', function() {
+          showToast('Firefox detected. Some 3D features may work best in Chrome, Edge, or Safari.', { duration: 8000 });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

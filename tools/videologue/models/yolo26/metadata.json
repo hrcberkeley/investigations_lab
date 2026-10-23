@@ -1,0 +1,12 @@
+{
+  "input": {
+    "width": 640,
+    "height": 640,
+    "layout": "NHWC",
+    "normalization": {
+      "scale": 0.00392156862745098,
+      "mean": [0, 0, 0],
+      "std": [1, 1, 1]
+    }
+  }
+}

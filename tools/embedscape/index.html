@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EmbedScape — Interactive Embedding Visualization</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>EmbedScape<span class="help-btn" id="help-btn">?</span></h1>
+      <p>Explore your data semantically and privately • Text ↔ Image semantic search</p>
+    </header>
+
+    <div class="main-layout">
+      <!-- Left column: Controls -->
+      <div class="controls-column">
+        <div class="panel" id="upload">
+          <h2>1) Load data</h2>
+          <div class="two-col">
+            <div>
+              <label>CSV or NDJSON file (UTF-8, header row for CSV)</label>
+              <input type="file" id="csv-file" accept=".csv,.ndjson,.jsonl" />
+              <div id="file-info" class="info-box" style="margin-top:10px"></div>
+            </div>
+            <div>
+              <label>Or load a saved session (.json)</label>
+              <div class="btn-row">
+                <button id="load-emb-btn" class="secondary-btn">📂 Load Saved</button>
+                <input type="file" id="emb-file" accept="application/json" style="display:none" />
+                <button id="save-emb-btn" class="primary-btn" disabled>💾 Save Session</button>
+              </div>
+              <div id="save-msg" class="info-box" style="display:none;margin-top:10px"></div>
+            </div>
+          </div>
+
+          <!-- Image/Video Upload Section -->
+          <div style="margin-top:20px; padding-top:20px; border-top:2px solid #fee2e2">
+            <label>📸 Or upload local images/videos to embed</label>
+            <button id="show-image-upload-btn" class="primary-btn" style="width:100%; margin-top:8px">📁 Upload Media
+              from Device</button>
+            <div id="image-upload-section" style="display:none; margin-top:12px">
+              <div id="drop-zone" class="drop-zone">
+                <p>📁 Drop images or videos here or click to browse</p>
+                <small>Images: JPG, PNG, GIF, WebP • Videos: MP4, WebM • Multiple files allowed</small>
+              </div>
+              <input type="file" id="image-files" accept="image/*,video/*" multiple style="display:none" />
+              <div id="image-grid" class="image-grid" style="display:none"></div>
+              <div class="btn-row" id="image-actions" style="display:none; margin-top:12px">
+                <button id="embed-images-btn" class="primary-btn">➡️ Configure Embedding</button>
+                <button id="clear-images-btn" class="secondary-btn">Clear All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" id="config" style="display:none">
+          <h2 id="config-title">2) Configure columns & model</h2>
+          <div class="row" id="column-config-row">
+            <div>
+              <label>Text column (optional)</label>
+              <select id="text-col">
+                <option value="">None</option>
+              </select>
+            </div>
+            <div>
+              <label>Label column (optional)</label>
+              <select id="label-col">
+                <option value="">None</option>
+              </select>
+            </div>
+            <div>
+              <label>Link column (optional)</label>
+              <select id="link-col">
+                <option value="">None</option>
+              </select>
+            </div>
+            <div>
+              <label>Image URL column (optional)</label>
+              <select id="image-col">
+                <option value="">None</option>
+              </select>
+            </div>
+            <div>
+              <label>Video URL column (optional)</label>
+              <select id="video-col">
+                <option value="">None</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div id="image-embedder-row">
+              <label for="image-embedder">Unified Multimodal Embedder</label>
+              <select id="image-embedder">
+                <option value="Xenova/clip-vit-base-patch32">CLIP ViT-B/32 (Text ↔ Image Unified Pipeline)</option>
+              </select>
+              <div class="small muted">
+                <strong>Note:</strong> This relies on <strong>WebGPU</strong>. Text, Images, and Video frames are embedded into the exact same contextual mathematical space automatically.
+              </div>
+            </div>
+            <div id="video-processing-row" style="display:none">
+              <label>Video processing</label>
+              <div style="display:flex; gap:12px; align-items:center">
+                <div style="flex:1">
+                  <label class="small">Frames per second</label>
+                  <input type="number" id="video-fps" value="1" min="0.5" max="5" step="0.5" />
+                </div>
+                <div style="flex:1">
+                  <label class="small">Max frames per video</label>
+                  <input type="number" id="video-max-frames" value="30" min="5" max="100" step="5" />
+                </div>
+              </div>
+              <div class="muted small" style="margin-top:6px">
+                Lower FPS = faster processing. Recommended: 1 FPS for most videos.
+              </div>
+            </div>
+            <div>
+              <label>Batch size</label>
+              <input type="number" id="batch" value="16" min="1" max="64" />
+              <div class="muted small" style="margin-top:6px">Lower if you hit memory limits; higher for speed.</div>
+            </div>
+            <div>
+              <label>Clusters (k-means)</label>
+              <input type="number" id="k" value="5" min="2" max="20" />
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:12px">
+            <button id="process" class="primary-btn">⚙️ Process</button>
+            <button id="cancel" class="secondary-btn" disabled>✖ Cancel</button>
+          </div>
+        </div>
+
+        <div class="panel" id="progress" style="display:none">
+          <h2>Processing…</h2>
+          <div class="progress-container">
+            <div class="progress-bar" id="bar"></div>
+          </div>
+          <div id="ptext" class="muted">Initializing…</div>
+        </div>
+
+        <div class="panel" id="search" style="display:none">
+          <h2>3) Semantic search & Tagging</h2>
+          <div class="row">
+            <div>
+              <label>Query type</label>
+              <select id="query-type">
+                <option value="text">Text query</option>
+                <option value="image">Image file</option>
+              </select>
+            </div>
+            <div>
+              <label>Text query</label>
+              <input type="text" id="q" placeholder="e.g. a red dog" />
+            </div>
+            <div>
+              <label>Upload image</label>
+              <input type="file" id="q-img" accept="image/*" style="display:none" />
+            </div>
+            <div>
+              <label>&nbsp;</label>
+              <div class="btn-row">
+                <button id="go" class="primary-btn">Search</button>
+                <button id="clear" class="secondary-btn">Clear</button>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <div>
+              <label>Similarity threshold <span id="thval" class="pill">0.70</span></label>
+              <input type="range" id="th" min="0" max="1" step="0.01" value="0.70" class="slider" />
+            </div>
+          </div>
+          <div id="results" class="info-box" style="margin-top:10px"></div>
+
+          <!-- Tagging Section -->
+          <div style="margin-top:20px; padding-top:20px; border-top:2px solid #fee2e2">
+            <h3 style="margin-bottom:12px; color:#dc2626">🏷️ Manual Tagging</h3>
+            <div class="row">
+              <div>
+                <label>Selection mode</label>
+                <select id="selection-mode">
+                  <option value="off">Off (click to view)</option>
+                  <option value="single">Single select</option>
+                  <option value="multi">Multi-select (Ctrl+Click)</option>
+                </select>
+              </div>
+              <div>
+                <label>Selected: <span id="selected-count" class="pill">0</span></label>
+                <button id="clear-selection" class="secondary-btn">Clear Selection</button>
+              </div>
+            </div>
+
+            <div style="margin-top:12px" id="tag-controls">
+              <label>Add tags to selected items</label>
+              <div class="btn-row">
+                <input type="text" id="new-tag" placeholder="Enter tag name..." style="flex:1; max-width:300px" />
+                <button id="add-tag-btn" class="primary-btn">+ Add Tag</button>
+                <button id="remove-tag-btn" class="secondary-btn">- Remove Tag</button>
+              </div>
+
+              <div id="current-tags" style="margin-top:10px"></div>
+            </div>
+
+            <div style="margin-top:12px">
+              <label>Visualization (scroll up or down to initialize the graph)</label>
+              <div class="btn-row">
+                <select id="color-mode">
+                  <option value="cluster">Color by Cluster</option>
+                  <option value="tag">Color by Tag</option>
+                </select>
+                <select id="tag-filter" multiple style="min-height:40px">
+                  <option value="all" selected>All items</option>
+                </select>
+              </div>
+              <div class="muted small" style="margin-top:6px">Hold Ctrl/Cmd to select multiple tags to filter</div>
+            </div>
+
+            <div id="all-tags" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </div><!-- End controls-column -->
+
+      <!-- Right column: Visualization -->
+      <div class="viz-column">
+        <div class="panel" id="preview-panel" style="display:none">
+          <h2>Data preview</h2>
+          <div id="preview-table" class="preview-table-wrapper">
+            <div class="muted small">Load a CSV to preview the first 100 rows here.</div>
+          </div>
+        </div>
+        <div class="panel" id="viz" style="display:none">
+          <h2>4) Visualization</h2>
+          <div id="graph-container"></div>
+        </div>
+      </div><!-- End viz-column -->
+    </div><!-- End main-layout -->
+  </div><!-- End container -->
+
+  <!-- Help Modal -->
+  <div id="help-modal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="help-close">&times;</span>
+      <h2 style="color:#dc2626; margin-bottom:20px">📚 How to Use EmbedScape</h2>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">🎯 What is EmbedScape?</h3>
+      <p>EmbedScape is a <strong>privacy-first embedding visualization tool</strong> that helps you explore your data
+        semantically. All processing happens locally in your browser - your data never leaves your computer!</p>
+      <p style="margin-top:8px"><strong>Key Features:</strong></p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li>🔍 Text ↔ Image semantic search (CLIP multimodal)</li>
+        <li>📊 Interactive 2D visualization of semantic relationships</li>
+        <li>🏷️ Manual tagging and filtering system</li>
+        <li>🎥 Video processing with frame extraction</li>
+        <li>💾 Save/load sessions to avoid reprocessing</li>
+      </ul>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">1️⃣ Load Your Data</h3>
+      <p>You have two ways to get data into EmbedScape:</p>
+
+      <p style="margin-top:10px"><strong>📄 CSV Upload:</strong> Upload a CSV file with text and/or media URLs. Each row
+        becomes a point in the visualization.</p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>Text column:</strong> Text content to embed (optional)</li>
+        <li><strong>Label column:</strong> Display name for each item (optional)</li>
+        <li><strong>Link column:</strong> Clickable URLs (optional)</li>
+        <li><strong>Image URL column:</strong> Links to images (optional)</li>
+        <li><strong>Video URL column:</strong> Links to videos (MP4/WebM, optional)</li>
+      </ul>
+
+      <p style="margin-top:12px"><strong>📸 Direct Media Upload:</strong> Upload images and videos directly from your
+        device.</p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li>Supported: JPG, PNG, GIF, WebP (images) • MP4, WebM (videos)</li>
+        <li>Drag & drop or click to browse</li>
+        <li>Multiple files allowed</li>
+        <li>Automatically configures for multimodal processing</li>
+      </ul>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">2️⃣ Configure & Process</h3>
+      <p>Choose your embedding settings:</p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>Unified Multimodal (CLIP ViT-B/32):</strong> Text, images, and video frames are all projected into the same 512-dimensional CLIP embedding space, enabling cross-modal similarity search.</li>
+        <li><strong>Hardware requirements:</strong> Uses WebGPU (q8 quantized) when available for GPU-accelerated inference; automatically falls back to CPU (WebAssembly) on unsupported browsers. Your data never leaves your device.</li>
+        <li><strong>Batch size:</strong> Higher = faster, lower = less memory usage</li>
+        <li><strong>Clusters:</strong> Number of k-means clusters for visualization</li>
+      </ul>
+
+      <p style="margin-top:10px"><strong>⚙️ Processing Pipeline:</strong></p>
+      <ol style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li>Generate embeddings from your data</li>
+        <li>Cluster using k-means algorithm</li>
+        <li>Reduce to 2D with UMAP for visualization</li>
+        <li>Create interactive scatter plot</li>
+      </ol>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">3️⃣ Semantic Search</h3>
+      <p><strong>🔤 Text Search:</strong> Enter any text query to find semantically similar items.</p>
+      <p style="margin-top:8px"><strong>🖼️ Image Search:</strong> (Multimodal only) Upload an image to find similar
+        text/images/videos.</p>
+
+      <div style="margin-top:12px; padding:12px; background:#f0f9ff; border-radius:6px; border-left:4px solid #0ea5e9">
+        <strong>💡 Pro Tips:</strong>
+        <ul style="margin-top:6px; margin-bottom:0">
+          <li>Click on search results to zoom and highlight that node</li>
+          <li>Adjust the similarity threshold (0.70 default) to control match strictness</li>
+          <li>Use descriptive queries: "a red sports car" vs "car"</li>
+          <li>For image search, try photos of objects, scenes, or concepts</li>
+        </ul>
+      </div>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">🏷️ Manual Tagging System</h3>
+      <p>Organize your data with custom tags:</p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>Selection modes:</strong>
+          <ul style="margin-top:4px">
+            <li>Off - Click to view details</li>
+            <li>Single select - Click to select one node</li>
+            <li>Multi-select - Ctrl/Cmd + click for multiple nodes</li>
+          </ul>
+        </li>
+        <li><strong>Add tags:</strong> Type tag name → click "+ Add Tag"</li>
+        <li><strong>Remove tags:</strong> Type tag name → click "- Remove Tag"</li>
+        <li><strong>Color modes:</strong> Switch between cluster colors and tag colors</li>
+        <li><strong>Filter by tags:</strong> Select tags to show only those items</li>
+        <li><strong>Persistence:</strong> Tags are saved with session files</li>
+      </ul>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">🎥 Video Processing Details</h3>
+      <p>Videos are processed by extracting frames and pooling their embeddings:</p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>Frames per second (FPS):</strong> How many frames to extract (0.5-5 fps recommended)</li>
+        <li><strong>Max frames:</strong> Upper limit per video (prevents timeouts)</li>
+        <li><strong>Processing time:</strong> ~20-60 seconds per video depending on length</li>
+        <li><strong>CORS requirements:</strong> Both image and video URLs must allow cross-origin access — CORS-blocked media is skipped (no proxy is used)</li>
+        <li><strong>Embedding method:</strong> Mean pooling of CLIP vision embeddings across all extracted frames</li>
+      </ul>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">📊 Interactive Visualization</h3>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>🖱️ Pan:</strong> Click and drag to move around the visualization</li>
+        <li><strong>🔍 Zoom:</strong> Scroll or pinch to zoom in/out</li>
+        <li><strong>👆 Click nodes:</strong> View detailed information in modal popup</li>
+        <li><strong>🎨 Colors:</strong> Different colors represent different clusters or tags</li>
+        <li><strong>✨ Highlighting:</strong> Search results glow gold, selected items glow cyan</li>
+        <li><strong>🏷️ Tooltips:</strong> Hover over nodes to see labels and tags</li>
+      </ul>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">💾 Save & Load Sessions</h3>
+      <p><strong>Why save sessions?</strong> Embedding generation can be time-consuming. Save your work to continue
+        later!</p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>What's saved:</strong> Embeddings, coordinates, clusters, tags, and configuration</li>
+        <li><strong>File size:</strong> Typically 1-10MB for CSV-based sessions; sessions with uploaded local images/videos will be larger (base64 data is embedded)</li>
+        <li><strong>Benefits:</strong> Instant loading, no reprocessing needed</li>
+        <li><strong>Portability:</strong> Share .json files with others — CSV-based sessions contain no original text data, only embeddings</li>
+      </ul>
+
+      <h3 style="margin-top:20px; margin-bottom:10px">🔧 Technical Details</h3>
+      <p><strong>Models & Libraries:</strong></p>
+      <ul style="margin-left:20px; margin-top:8px; line-height:1.6">
+        <li><strong>Embeddings:</strong> CLIP ViT-B/32 via <code>CLIPTextModelWithProjection</code> + <code>CLIPVisionModelWithProjection</code> (512 dimensions, shared space)</li>
+        <li><strong>Runtime:</strong> transformers.js 3.x · WebGPU · q8 quantized · browser-cached after first load</li>
+        <li><strong>Clustering:</strong> k-means algorithm</li>
+        <li><strong>Dimensionality reduction:</strong> UMAP (n_neighbors=15, min_dist=0.1)</li>
+        <li><strong>Visualization:</strong> deck.gl with WebGL acceleration</li>
+        <li><strong>Processing:</strong> Web Workers (browser-based, no server required)</li>
+      </ul>
+
+      <div style="margin-top:24px; padding:12px; background:#fef2f2; border-radius:6px; border-left:4px solid #dc2626">
+        <strong>🔒 Privacy Notice:</strong> All processing happens locally in your browser using Web Workers. Your data,
+        files, and content never leave your computer or contact any external servers (except for loading models from
+        Hugging Face CDN, which is cached locally after first use).
+      </div>
+
+      <div style="margin-top:16px; padding:12px; background:#f0fdf4; border-radius:6px; border-left:4px solid #22c55e">
+        <strong>💡 Getting Started:</strong> Try uploading a small CSV (10-50 rows) first to understand the workflow,
+        then scale up to larger datasets. The interface is designed to guide you through each step!
+      </div>
+    </div>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/umap-js@1.4.0/lib/umap-js.min.js"></script>
+  <script src="https://unpkg.com/deck.gl@^9.0.0/dist.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+
+</html>

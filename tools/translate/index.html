@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>HRC Translate — Private On-Device Translation</title>
+  <meta name="description" content="Private, in-browser translation powered by AI. No data leaves your device. 200+ languages." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <!-- Thin model-download progress bar -->
+  <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="seal" aria-hidden="true"></div>
+      <div>
+        <div class="title">HRC Translate</div>
+        <div class="subtitle">Private, on-device translation</div>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <div class="status" id="status"><span class="status-dot"></span><span id="statusText">Initializing…</span></div>
+      <button class="icon-btn" id="historyBtn" title="Translation history" aria-label="History">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel main-panel">
+      <div class="panel-header">
+        <h1>Translate text locally</h1>
+        <kbd class="shortcut-hint" title="Ctrl/⌘ + Enter to translate">⌘↵</kbd>
+      </div>
+
+      <!-- Model selector -->
+      <div class="model-row">
+        <label class="lang-label" for="modelSelect">Model</label>
+        <select id="modelSelect" class="model-select">
+          <option value="nllb">NLLB-200 (600M) — works everywhere</option>
+          <option value="gemma">TranslateGemma 4B — WebGPU, higher quality</option>
+        </select>
+      </div>
+
+      <!-- Language selectors -->
+      <div class="lang-grid">
+        <div class="lang-select-wrap" id="srcLangWrap">
+          <label class="lang-label">From</label>
+          <button class="lang-trigger" id="srcLangTrigger" type="button">
+            <span id="srcLangDisplay">English</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lang-dropdown" id="srcLangDropdown">
+            <div class="lang-search-wrap"><input type="text" class="lang-search" id="srcLangSearch" placeholder="Search languages…" autocomplete="off" /></div>
+            <div class="lang-options" id="srcLangOptions"></div>
+          </div>
+          <input type="hidden" id="srcLang" value="eng_Latn" />
+        </div>
+
+        <button class="swap-btn" id="swapBtn" type="button" title="Swap languages" aria-label="Swap languages">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+        </button>
+
+        <div class="lang-select-wrap" id="tgtLangWrap">
+          <label class="lang-label">To</label>
+          <button class="lang-trigger" id="tgtLangTrigger" type="button">
+            <span id="tgtLangDisplay">Spanish</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lang-dropdown" id="tgtLangDropdown">
+            <div class="lang-search-wrap"><input type="text" class="lang-search" id="tgtLangSearch" placeholder="Search languages…" autocomplete="off" /></div>
+            <div class="lang-options" id="tgtLangOptions"></div>
+          </div>
+          <input type="hidden" id="tgtLang" value="spa_Latn" />
+        </div>
+      </div>
+
+      <!-- Chunk progress -->
+      <div class="chunk-progress" id="chunkProgress" hidden>
+        <div class="chunk-bar"><div class="chunk-fill" id="chunkFill"></div></div>
+        <span class="chunk-label" id="chunkLabel"></span>
+      </div>
+
+      <!-- IO -->
+      <div class="io">
+        <div class="io-col">
+          <div class="io-header">
+            <span>Input</span>
+            <div class="io-actions">
+              <span class="badge" id="inCount">0 chars</span>
+              <button class="io-action-btn" id="uploadBtn" title="Upload PDF or DOCX"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></button>
+              <input type="file" id="fileInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden />
+              <button class="io-action-btn" id="pasteBtn" title="Paste from clipboard"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></button>
+              <button class="io-action-btn" id="clearBtn" title="Clear input"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+            </div>
+          </div>
+          <textarea id="inputText" placeholder="Type or paste text, or upload a PDF/DOCX…"></textarea>
+        </div>
+        <div class="io-col">
+          <div class="io-header">
+            <span>Output</span>
+            <div class="io-actions">
+              <span class="badge" id="outCount">0 chars</span>
+              <button class="io-action-btn" id="copyBtn" title="Copy translation"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+            </div>
+          </div>
+          <textarea id="outputText" placeholder="Translation appears here…" readonly></textarea>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <button class="btn primary" id="translateBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg>
+          <span>Translate</span>
+        </button>
+        <button class="btn danger" id="stopBtn" hidden>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+          <span>Stop</span>
+        </button>
+        <button class="btn secondary" id="detectBtn" title="Auto-detect source language">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <span>Detect language</span>
+        </button>
+      </div>
+    </section>
+
+    <section class="panel side-panel">
+      <h2>About</h2>
+      <ul class="info-list">
+        <li><span class="info-icon">🔒</span><div><strong>100% Private</strong><br/><span class="muted">All processing happens in your browser.</span></div></li>
+        <li><span class="info-icon">🌍</span><div><strong id="langCountText">200+ Languages</strong><br/><span class="muted" id="langDescText">Powered by Meta's NLLB-200 model.</span></div></li>
+        <li><span class="info-icon">⚡</span><div><strong>Smart Pipeline</strong><br/><span class="muted">Token-aware chunking with auto retry.</span></div></li>
+        <li><span class="info-icon">💾</span><div><strong>Cached Locally</strong><br/><span class="muted" id="cacheDescText">~100 MB model downloaded once.</span></div></li>
+      </ul>
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcuts">
+        <div class="shortcut"><kbd>⌘</kbd><span>+</span><kbd>↵</kbd> <span class="muted">Translate</span></div>
+        <div class="shortcut"><kbd>⌘</kbd><span>+</span><kbd>⇧</kbd><span>+</span><kbd>S</kbd> <span class="muted">Swap languages</span></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- History drawer -->
+  <div class="history-overlay" id="historyOverlay" hidden>
+    <div class="history-drawer">
+      <div class="history-header">
+        <h2>History</h2>
+        <div class="history-actions">
+          <button class="icon-btn hist-icon-btn" id="clearHistoryBtn" title="Clear all"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+          <button class="icon-btn hist-icon-btn" id="closeHistoryBtn" title="Close"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+        </div>
+      </div>
+      <div class="history-list" id="historyList"><div class="history-empty">No translations yet</div></div>
+    </div>
+  </div>
+
+  <footer class="footer">Powered by Transformers.js — NLLB-200 &amp; TranslateGemma</footer>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

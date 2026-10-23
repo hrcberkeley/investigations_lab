@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>B-RAG</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <!-- Google Fonts: Inter (Sans) and Source Serif 4 (Serif) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+  <header class="wrap">
+    <div class="title-group">
+      <h1>B-RAG</h1>
+      <button id="helpBtn" aria-label="Help">?</button>
+    </div>
+    <p class="sub">
+      Upload documents → chunk → embed → local search → answer with <code>window.LanguageModel</code> (native Prompt API or
+      <code>language-model-polyfill</code>).
+    </p>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <h2>1) Documents</h2>
+
+      <div class="row row-3">
+        <label>
+          Add files (PDF, DOCX, TXT, HTML)
+          <input id="fileInput" type="file" multiple accept=".pdf,.docx,.txt,.html,.htm" />
+        </label>
+
+        <label>
+          Chunk size (chars)
+          <input id="chunkSize" type="number" min="200" max="8000" step="50" value="1800" />
+        </label>
+
+        <label>
+          Overlap (chars)
+          <input id="chunkOverlap" type="number" min="0" max="2000" step="25" value="250" />
+        </label>
+      </div>
+
+      <div class="row row-3">
+        <label>
+          Embedding model
+          <select id="embedModel">
+            <option value="Xenova/all-MiniLM-L6-v2" selected>Xenova/all-MiniLM-L6-v2 (fast, general)</option>
+            <option value="Xenova/e5-small-v2">Xenova/e5-small-v2 (retrieval‑leaning)</option>
+          </select>
+        </label>
+
+        <label>
+          Device
+          <select id="embedDevice">
+            <option value="auto" selected>Auto</option>
+            <option value="webgpu">WebGPU (fast if supported)</option>
+            <option value="wasm">WASM (fallback)</option>
+          </select>
+        </label>
+
+        <label>
+          Top‑K retrieval
+          <input id="topK" type="number" min="1" max="20" step="1" value="5" />
+        </label>
+      </div>
+
+      <div class="row actions">
+        <button id="buildBtn" type="button">Build / Update index</button>
+        <button id="clearBtn" type="button">Clear index</button>
+        <button id="initLMBtn" type="button">Initialize LLM</button>
+      </div>
+
+      <div class="row">
+        <div id="docList" class="card">
+          <div class="muted">No documents loaded yet.</div>
+        </div>
+      </div>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div class="progress-wrap" aria-hidden="true">
+        <div id="progress" class="progress"></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>2) Ask</h2>
+
+      <div class="row row-2">
+        <label>
+          Question
+          <textarea id="question" placeholder="Ask about your uploaded documents…"></textarea>
+        </label>
+
+        <label>
+          Answer
+          <textarea id="answer" placeholder="Answer will appear here…" readonly></textarea>
+        </label>
+      </div>
+
+      <div class="row actions">
+        <button id="askBtn" type="button" disabled>Retrieve + Answer</button>
+        <button id="stopBtn" type="button" disabled>Stop</button>
+        <button id="copyBtn" type="button" disabled>Copy answer</button>
+      </div>
+
+      <details class="advanced">
+        <summary>Answering options</summary>
+        <div class="row row-3">
+          <label>
+            Temperature
+            <input id="temperature" type="number" min="0" max="2" step="0.05" value="0.2" />
+          </label>
+          <label>
+            Top‑K (LLM)
+            <input id="llmTopK" type="number" min="1" max="8" step="1" value="8" />
+          </label>
+          <label class="checkbox">
+            <input id="streaming" type="checkbox" checked />
+            Stream answer
+          </label>
+        </div>
+
+        <label class="checkbox">
+          <input id="forceCitations" type="checkbox" checked />
+          Force citations (answer should reference chunk IDs like [D1‑C3])
+        </label>
+
+        <p class="hint">
+          Tip: keep temperature low for stable, quote‑like answers.
+        </p>
+      </details>
+
+      <h3>Sources</h3>
+      <div id="sources" class="card">
+        <div class="muted">No retrieval yet.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Notes</h2>
+      <ul>
+        <li>Embeddings are computed locally using Transformers.js.</li>
+        <li>Answering uses <code>window.LanguageModel</code> (native Prompt API or the polyfill).</li>
+        <li>PDF text extraction quality varies depending on the PDF structure.</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- Help Modal -->
+  <div id="helpModal" class="modal-backdrop">
+    <div class="modal-content">
+      <button id="closeModalBtn" class="modal-close" aria-label="Close modal">×</button>
+      <h3>About B-RAG</h3>
+      <p><strong>B-RAG</strong> is an experimental, in-browser RAG (Retrieval-Augmented Generation) tool that operates entirely on your device. No data is sent to any server.</p>
+      <p>How to use:</p>
+      <ol>
+        <li><strong>Upload Documents</strong>: Select PDF, DOCX, TXT, or HTML files.</li>
+        <li><strong>Build Index</strong>: The app chunks your files and computes embeddings locally.</li>
+        <li><strong>Ask Questions</strong>: Type your query. The app retrieves relevant chunks and uses the browser's local language model to answer.</li>
+      </ol>
+      <p><em>Note: This tool requires a browser with the Prompt API enabled (e.g., Chrome Canary with flags) or a polyfill.</em></p>
+    </div>
+  </div>
+
+  <footer class="wrap small">
+    <p>B-RAG | No backend. Everything happens locally in your browser.</p>
+  </footer>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

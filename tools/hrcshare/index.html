@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HRC Share: direct, private file transfer</title>
+<style>
+  :root {
+    /* UC Berkeley official palette */
+    --berkeley-blue: #003262;   /* primary */
+    --california-gold: #FDB515; /* primary accent */
+    --founders-rock: #3B7EA1;   /* secondary */
+    --medalist: #C4820E;        /* secondary */
+
+    --bg: #f4f6f8;
+    --panel: #ffffff;
+    --ink: #14202b;
+    --muted: #5a6b78;
+    --border: #d6dde3;
+    --ok: #1a7f37;
+    --warn: #9a6700;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink);
+    min-height: 100vh;
+  }
+
+  /* Header band in Berkeley Blue with gold rule */
+  header {
+    background: var(--berkeley-blue);
+    color: #fff;
+    border-bottom: 4px solid var(--california-gold);
+    padding: 1.1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .75rem;
+  }
+  .brand { display: flex; align-items: baseline; gap: .6rem; }
+  .brand .mark {
+    font-weight: 800; font-size: 1.35rem; letter-spacing: -.01em;
+  }
+  .brand .mark .gold { color: var(--california-gold); }
+  .brand .org { font-size: .78rem; color: #c9d6e2; font-weight: 500; }
+  header button.howbtn {
+    background: var(--california-gold); color: var(--berkeley-blue);
+    border: none; border-radius: 8px; padding: .55rem 1rem;
+    font-weight: 700; cursor: pointer; font-size: .85rem;
+  }
+  header button.howbtn:hover { background: #ffc83d; }
+
+  .wrap { display: flex; justify-content: center; padding: 1.5rem; }
+  .card {
+    width: 100%; max-width: 620px; background: var(--panel);
+    border: 1px solid var(--border); border-radius: 14px; padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 .25rem; color: var(--berkeley-blue); }
+  .sub { color: var(--muted); font-size: .9rem; margin: 0 0 1.5rem; line-height: 1.5; }
+	  .hidden { display: none !important; }
+
+	  .lane {
+	    border: 1px solid var(--border); border-radius: 10px; padding: .85rem;
+	    margin: 0 0 1.25rem; background: #fbfcfd;
+	  }
+	  .laneHead {
+	    display: flex; justify-content: space-between; gap: .75rem; align-items: baseline;
+	    margin-bottom: .65rem;
+	  }
+	  .laneHead h2 { margin: 0; color: var(--berkeley-blue); font-size: .9rem; }
+	  .laneHead span { color: var(--muted); font-size: .74rem; }
+	  .laneBtns { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
+	  .laneBtn {
+	    background: #fff; color: var(--ink); border: 2px solid var(--border);
+	    border-radius: 8px; text-align: left; padding: .75rem; font-size: .84rem;
+	  }
+	  .laneBtn.active { border-color: var(--founders-rock); background: #eef5f9; }
+	  .laneBtn:hover { background: #f7fafc; }
+	  .laneBtn .d { display: block; color: var(--muted); font-weight: 400; font-size: .74rem; margin-top: .25rem; line-height: 1.35; }
+	  .laneBtn:disabled { opacity: .65; cursor: not-allowed; }
+
+	  .roles { display: flex; gap: .75rem; margin-bottom: 1.5rem; }
+  .roleBtn {
+    flex: 1; background: #fff; border: 2px solid var(--border);
+    color: var(--ink); border-radius: 10px; padding: 1rem; cursor: pointer;
+    font-weight: 700; font-size: .95rem; transition: border-color .15s, background .15s;
+    text-align: left;
+  }
+  .roleBtn:hover { border-color: var(--founders-rock); background: #f7fafc; }
+  .roleBtn .d { display: block; font-weight: 400; font-size: .78rem; color: var(--muted); margin-top: .35rem; }
+
+  .step { margin-bottom: 1.25rem; }
+  .step h3 {
+    font-size: .82rem; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--berkeley-blue); margin: 0 0 .5rem; font-weight: 700;
+  }
+  .step.muted { opacity: .4; pointer-events: none; }
+
+	  #dropZone {
+	    display: block;
+	    border: 2px dashed var(--border); border-radius: 12px; padding: 2rem 1rem;
+	    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+	  }
+  #dropZone.drag { border-color: var(--founders-rock); background: #eef5f9; }
+  #dropZone p { margin: .5rem 0 0; color: var(--muted); font-size: .85rem; }
+  .pick {
+    display: inline-block; background: var(--berkeley-blue); color: #fff;
+    padding: .55rem 1.05rem; border-radius: 8px; font-weight: 700;
+  }
+  input[type=file] { display: none; }
+
+  textarea {
+    width: 100%; min-height: 84px; background: #fbfcfd; border: 1px solid var(--border);
+    color: var(--ink); border-radius: 8px; padding: .65rem; font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .72rem; resize: vertical; word-break: break-all;
+  }
+  .row { display: flex; gap: .5rem; margin-top: .5rem; flex-wrap: wrap; }
+  button {
+    background: var(--berkeley-blue); color: #fff; border: none; border-radius: 8px;
+    padding: .6rem 1.1rem; font-weight: 700; cursor: pointer; font-size: .85rem;
+  }
+  button:hover { background: #00254a; }
+  button.gold { background: var(--california-gold); color: var(--berkeley-blue); }
+  button.gold:hover { background: #ffc83d; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+
+  #status { margin-top: 1rem; font-size: .85rem; color: var(--muted); min-height: 1.2em; }
+  #status.ok { color: var(--ok); font-weight: 600; }
+  #status.warn { color: var(--warn); font-weight: 600; }
+
+  .fname { font-weight: 700; font-size: 1.05rem; color: var(--berkeley-blue); }
+  .fmeta { color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+  progress { width: 100%; height: 12px; border-radius: 6px; }
+  progress::-webkit-progress-bar { background: #e9eef2; border-radius: 6px; }
+  progress::-webkit-progress-value { background: var(--california-gold); border-radius: 6px; }
+  progress::-moz-progress-bar { background: var(--california-gold); border-radius: 6px; }
+  #progressLabel { font-size: .8rem; color: var(--muted); margin-top: .5rem; }
+  #downloadLink {
+    display: inline-block; margin-top: 1rem; background: var(--california-gold); color: var(--berkeley-blue);
+    padding: .55rem 1.05rem; border-radius: 8px; text-decoration: none; font-weight: 700;
+  }
+	  .hint { font-size: .78rem; color: var(--muted); margin: .35rem 0 0; line-height: 1.45; }
+	  .verifyBox {
+	    border: 1px solid #b6d2e2; background: #eef7fb; border-radius: 10px;
+	    padding: .95rem; margin-top: .6rem;
+	  }
+	  .verifyCode {
+	    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 1.65rem;
+	    font-weight: 800; color: var(--berkeley-blue); letter-spacing: .08em;
+	    margin: .35rem 0;
+	  }
+
+  /* Visible security disclaimer */
+  .disclaimer {
+    border: 1px solid #e7c200;
+    background: #fff8e6;
+    border-left: 5px solid var(--california-gold);
+    border-radius: 8px;
+    padding: .9rem 1.1rem;
+    margin: 0 0 1.5rem;
+    font-size: .85rem;
+    line-height: 1.55;
+  }
+  .disclaimer .dtitle {
+    display: flex; align-items: center; gap: .45rem;
+    font-weight: 800; color: var(--berkeley-blue); margin-bottom: .4rem;
+    font-size: .9rem;
+  }
+  .disclaimer ul { margin: .4rem 0 .2rem; padding-left: 1.15rem; }
+  .disclaimer li { margin: .25rem 0; }
+  .disclaimer a { color: var(--founders-rock); font-weight: 700; cursor: pointer; }
+  .disclaimer .more {
+    background: none; border: none; color: var(--founders-rock);
+    font-weight: 700; cursor: pointer; padding: 0; font-size: .85rem; text-decoration: underline;
+  }
+
+  footer.foot {
+    text-align: center; font-size: .75rem; color: var(--muted);
+    padding: 1.5rem; line-height: 1.6;
+  }
+  footer.foot strong { color: var(--berkeley-blue); }
+
+  /* ---- How-it-works modal ---- */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,18,40,.55);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 2rem 1rem; overflow-y: auto; z-index: 50;
+  }
+  .modal {
+    background: #fff; max-width: 780px; width: 100%; border-radius: 14px;
+    border-top: 6px solid var(--california-gold); overflow: hidden;
+  }
+  .modal-head {
+    background: var(--berkeley-blue); color: #fff; padding: 1.1rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-head h2 { margin: 0; font-size: 1.15rem; }
+  .modal-head button {
+    background: transparent; border: 1px solid rgba(255,255,255,.4); color: #fff;
+    border-radius: 8px; padding: .4rem .8rem; font-weight: 700;
+  }
+  .modal-body { padding: 1.5rem; }
+  .modal-body h3 { color: var(--berkeley-blue); font-size: 1rem; margin: 1.4rem 0 .5rem; }
+  .modal-body h3:first-child { margin-top: 0; }
+  .modal-body p { line-height: 1.6; font-size: .92rem; margin: .5rem 0; }
+  .modal-body ol { line-height: 1.6; font-size: .92rem; padding-left: 1.2rem; }
+  .modal-body li { margin: .4rem 0; }
+  .keypt {
+    background: #fff8e6; border-left: 4px solid var(--california-gold);
+    padding: .85rem 1rem; border-radius: 0 8px 8px 0; margin: 1rem 0; font-size: .9rem; line-height: 1.55;
+  }
+  .tabs { display: flex; gap: .5rem; margin: 1.25rem 0 .75rem; border-bottom: 2px solid var(--border); }
+  .tab {
+    background: transparent; color: var(--muted); border: none; border-bottom: 3px solid transparent;
+    padding: .5rem .85rem; font-weight: 700; cursor: pointer; border-radius: 0; font-size: .85rem;
+  }
+  .tab.active { color: var(--berkeley-blue); border-bottom-color: var(--california-gold); }
+  .codewrap { position: relative; }
+  pre.source {
+    background: #0e1116; color: #e6edf3; border-radius: 8px; padding: 1rem;
+    overflow: auto; max-height: 460px; font-size: .72rem; line-height: 1.5;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; white-space: pre;
+  }
+  .copySrc {
+    position: absolute; top: .6rem; right: .6rem; background: var(--california-gold);
+    color: var(--berkeley-blue); padding: .35rem .7rem; font-size: .75rem;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="mark">HRC <span class="gold">Share</span></span>
+      <span class="org">UC Berkeley Human Rights Center</span>
+    </div>
+    <button class="howbtn" id="openHow">How does this work?</button>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <h1>Send a file directly, with no server in the middle</h1>
+	      <p class="sub">HRC Share moves a file straight from your browser to the other person's browser. The file is never uploaded to any server, never stored anywhere, and never passes through HRC or anyone else. You connect by swapping two short codes.</p>
+
+	      <div class="disclaimer" role="note">
+	        <div class="dtitle">⚠ Before you rely on this, understand what it does and doesn't protect</div>
+	        HRC Share keeps your file off the cloud and encrypts it while it travels between the two browsers. It does <strong>not</strong> make you anonymous or protect the file once it arrives. In particular:
+        <ul>
+          <li><strong>The codes are the weak point.</strong> Send the invite and reply codes over a channel you already trust (an encrypted messenger). Anyone who can intercept and alter both codes could insert themselves into the transfer.</li>
+          <li><strong>Your network address is exposed.</strong> The two devices reveal their IP addresses to each other (and to a third-party lookup service) so they can connect. This is private, not anonymous. It is not Tor.</li>
+          <li><strong>The received file is unprotected.</strong> It arrives as an ordinary, unencrypted file on the other person's device, which may be backed up, shared, compromised, or seized.</li>
+        </ul>
+	        <button class="more" id="openHowFromDisclaimer">Read the full security explanation →</button>
+	      </div>
+
+	      <div class="lane" id="laneChooser">
+	        <div class="laneHead">
+	          <h2>Security lane</h2>
+	          <span id="laneLock">Switch any time before transfer starts.</span>
+	        </div>
+	        <div class="laneBtns">
+	          <button class="laneBtn active" id="laneClassic" data-mode="classic">Classic
+	            <span class="d">Fastest flow. The codes are trusted exactly as exchanged.</span></button>
+	          <button class="laneBtn" id="laneHardened" data-mode="hardened">Hardened
+	            <span class="d">Adds a verification code both people compare before sending.</span></button>
+	        </div>
+	      </div>
+
+	      <div class="lane" id="networkCheck">
+	        <div class="laneHead">
+	          <h2>Network check</h2>
+	          <span>See if this device can reach others directly.</span>
+	        </div>
+	        <button id="checkNetworkBtn" class="laneBtn" style="width:100%;">Check network</button>
+	        <p class="hint">Tests whether this browser can discover its public address. Restrictive networks may still fail if the other side is also restricted.</p>
+	      </div>
+
+	      <!-- Role chooser -->
+	      <div id="roleChooser" class="roles">
+        <button class="roleBtn" id="beSender">I'm sending a file
+          <span class="d">You have the file. Start here.</span></button>
+        <button class="roleBtn" id="beReceiver">I'm receiving a file
+          <span class="d">Someone is sending you a file.</span></button>
+      </div>
+
+      <!-- SENDER -->
+      <div id="senderFlow" class="hidden">
+        <div class="step" id="s1">
+          <h3>Step 1: Choose the file</h3>
+          <label id="dropZone" for="fileInput">
+            <span class="pick">Choose a file</span>
+            <p>or drag &amp; drop it here</p>
+          </label>
+          <input type="file" id="fileInput" />
+        </div>
+        <div class="step muted" id="s2">
+          <h3>Step 2: Send your invite code to the other person</h3>
+          <textarea id="offerOut" readonly placeholder="Generating…"></textarea>
+          <div class="row"><button id="copyOffer" class="gold">Copy invite code</button></div>
+          <p class="hint">Send this whole code to the receiver however you like (encrypted chat, email). It may take a few seconds to appear while your browser maps its network paths.</p>
+        </div>
+	        <div class="step muted" id="s3">
+	          <h3>Step 3: Paste their reply code, then connect</h3>
+	          <textarea id="answerIn" placeholder="Paste the receiver's reply code…"></textarea>
+	          <div class="row"><button id="acceptAnswer">Connect</button></div>
+	        </div>
+	        <div class="step muted hidden" id="s4">
+	          <h3>Step 4: Compare the verification code</h3>
+	          <div class="verifyBox">
+	            <div class="hint">Use a trusted second channel, such as voice or an encrypted chat, to confirm the receiver sees this exact code. The file will not send until you confirm.</div>
+	            <div class="verifyCode" id="senderAuthCode">------</div>
+	            <div class="row"><button id="confirmSenderAuth" class="gold">I confirmed the code matches</button></div>
+	          </div>
+	        </div>
+	      </div>
+
+      <!-- RECEIVER -->
+      <div id="receiverFlow" class="hidden">
+        <div class="step" id="r1">
+          <h3>Step 1: Paste the sender's invite code</h3>
+          <textarea id="offerIn" placeholder="Paste the invite code the sender gave you…"></textarea>
+          <div class="row"><button id="acceptOffer">Generate reply</button></div>
+        </div>
+	        <div class="step muted" id="r2">
+	          <h3>Step 2: Send your reply code back to the sender</h3>
+	          <textarea id="answerOut" readonly placeholder="Generating…"></textarea>
+	          <div class="row"><button id="copyAnswer" class="gold">Copy reply code</button></div>
+	          <p class="hint" id="replyHint">Send this back to the sender. Once they paste it and click Connect, the transfer begins automatically.</p>
+	        </div>
+	        <div class="step muted hidden" id="r3">
+	          <h3>Step 3: Compare the verification code</h3>
+	          <div class="verifyBox">
+	            <div class="hint">Confirm the sender sees this exact code before accepting the file. If it differs, stop and make fresh codes.</div>
+	            <div class="verifyCode" id="receiverAuthCode">------</div>
+	            <div class="row"><button id="confirmReceiverAuth" class="gold">I confirmed the code matches</button></div>
+	          </div>
+	        </div>
+	      </div>
+
+      <!-- TRANSFER -->
+      <div id="transfer" class="hidden">
+        <div class="fname" id="fileName"></div>
+        <div class="fmeta" id="fileMeta"></div>
+        <progress id="progress" value="0" max="100"></progress>
+        <div id="progressLabel"></div>
+        <a id="downloadLink" class="hidden"></a>
+      </div>
+
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <footer class="foot">
+    <strong>HRC Share</strong> · UC Berkeley Human Rights Center<br/>
+    Peer-to-peer over WebRTC · encrypted in transit · no server, no storage, no accounts<br/>
+    Open and inspectable. The entire program is visible under "How does this work?"
+  </footer>
+
+  <!-- How-it-works modal -->
+  <div class="overlay hidden" id="howOverlay">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>How HRC Share works</h2>
+        <button id="closeHow">Close</button>
+      </div>
+      <div class="modal-body">
+        <h3>The short version</h3>
+        <p>When you send a file with most tools, the file is uploaded to a company's server, sits there for a while, and the other person downloads it from that server. The company, in principle, has your file.</p>
+	        <p>HRC Share does not work that way. Your file goes <strong>directly</strong> from your browser to the other person's browser, over a private connection the two browsers build between themselves. Nothing is uploaded to a server, no account is needed, and HRC Share keeps no server-side copy or account state.</p>
+
+        <div class="keypt">
+          Because there is no server holding the file, there is no central copy for anyone to subpoena, leak, hack, or quietly scan. The file exists only on the two devices at the two ends. (That also means the protection ends at those two devices, which the security section below covers.)
+        </div>
+
+        <h3>How the connection gets made</h3>
+        <p>The one tricky part is that two browsers don't normally know how to find each other across the internet. Most tools solve this with a "matchmaker" server. HRC Share avoids even that by having the two people do the introduction by hand. That's the two codes you copy and paste:</p>
+        <ol>
+          <li>The sender picks a file. Their browser writes an <strong>invite code</strong>, a block of text describing how to reach it.</li>
+          <li>The sender passes that code to the receiver (over whatever channel they already trust).</li>
+          <li>The receiver pastes it in, and their browser writes a <strong>reply code</strong> describing how to reach <em>them</em>.</li>
+          <li>The receiver sends the reply code back. The sender pastes it and clicks Connect.</li>
+          <li>Now each browser knows how to reach the other. They open a direct, encrypted channel and the file streams across it.</li>
+	        </ol>
+	        <p>Those two codes <em>are</em> the introduction. Once they've been swapped, the browsers talk only to each other.</p>
+
+	        <h3>Classic and hardened lanes</h3>
+	        <p>The classic lane keeps the original flow: after the invite and reply codes are pasted, the transfer starts as soon as the browser connection opens. This is fastest, but it relies completely on the channel used to exchange the codes.</p>
+	        <p>The hardened lane adds one more stop before the file moves. After both codes are exchanged, both browsers hash the offer and answer together and display the same short verification code. Both people should compare that code over a trusted second channel. If an attacker changed the connection codes in transit, the verification code will not match. This still depends on a comparison channel the attacker cannot silently edit.</p>
+
+        <h3 id="securitySection">Security caveats: please read this part</h3>
+        <p>HRC Share gives you two real protections: your file is never placed on a third party's server in the cloud, and the connection between the two browsers is encrypted while the file travels (using a web standard called WebRTC, which encrypts the link automatically). Those are meaningful. They are also the limit of what this tool does. It is important to be clear about what it does <strong>not</strong> protect against, so you can decide whether it fits your situation.</p>
+
+        <div class="keypt">
+          Short version: HRC Share keeps your file off the cloud and scrambles it in transit. It does not make you anonymous, does not verify who is on the other end, and does not protect the file once it lands on the other person's device.
+        </div>
+
+	        <p><strong>1. The codes you swap are the real trust anchor.</strong> The encryption keys that secure the transfer are carried inside the invite and reply codes themselves. In the classic lane, the security of the whole transfer rests on the channel you use to exchange those codes. If someone can intercept and alter both codes in transit (a classic interception attack), they can quietly substitute their own and end up sitting in the middle of your transfer, able to read the file while each side believes they are talking to the other. The hardened lane helps catch this by showing a shared verification code before transfer, but only if both people compare that code through a channel the attacker cannot silently edit.</p>
+
+        <p><strong>2. Your network address is exposed, so this is private but not anonymous.</strong> For two browsers to find each other, each side learns the other's IP address, and a free public "address lookup" service (called STUN) also sees your IP. Your file's contents stay hidden, but someone observing the network (an internet provider, a network administrator, a well-resourced adversary) can generally see that your device connected to the other device and roughly how much data moved. If hiding the fact that two parties communicated, or hiding your location, matters for your safety, this tool is not the right choice and you should look at something built for anonymity, such as tools that route over Tor.</p>
+
+        <p><strong>3. There is no check on who is at the other end.</strong> Nothing in HRC Share verifies the identity of the person you are connected to. You are trusting that whoever gave you the code is who you believe them to be. The tool cannot confirm that for you.</p>
+
+        <p><strong>4. The received file is unprotected once it arrives.</strong> The encryption applies only while the file is in transit. After it lands, it is an ordinary file sitting on the other person's device, with no protection of its own. That device might be backed up to a cloud service, shared with others, infected with malware, or physically seized. The same is true of your own copy. If the file is sensitive, consider encrypting it yourself (for example in a password-protected archive) before sending, and share the password separately.</p>
+
+        <p><strong>5. Everything depends on both devices being trustworthy.</strong> No transfer tool can protect against a compromised device. Malware, a keylogger, a malicious browser extension, or screen-recording on either end defeats the protections described here. Keep both devices as secure as you can.</p>
+
+        <p><strong>6. No delivery guarantee.</strong> If the connection drops partway, the transfer simply fails; there is no resume and no copy held anywhere to retry from. You would start over.</p>
+
+        <p>If, after reading this, the tradeoffs fit what you need (sending one file to one person you are already in contact with, without handing it to a cloud provider), HRC Share does that job well. If they don't, that is exactly the kind of judgment this section is meant to help you make.</p>
+
+        <h3>Other limits</h3>
+        <p>This direct approach can fail on some heavily restricted networks (certain corporate or institutional firewalls) where the two browsers simply cannot reach each other without a relay, which this no-server version deliberately does not include. It also handles one file per session. For most situations, sending one file to one person you are already in contact with, it works well.</p>
+
+        <h3>The complete source code</h3>
+        <p>For full transparency, the entire program, everything that runs when you open this page, is shown below. There is nothing else: no hidden backend, no external code beyond the public address-lookup service named in it. You're welcome to read it, save it, host it yourself, or have someone you trust review it.</p>
+
+        <div class="tabs">
+          <button class="tab active" data-tab="full">Full page source</button>
+        </div>
+        <div class="codewrap">
+          <button class="copySrc" id="copySrc">Copy</button>
+          <pre class="source" id="sourceView">Loading source…</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // Public STUN address-lookup only. No TURN relay and no signaling server:
+  // the two people introduce their browsers by hand via the copied codes.
+  const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+
+  const CHUNK_SIZE = 16 * 1024;
+  const BUFFER_HIGH = 8 * 1024 * 1024;
+  const BUFFER_LOW = 1 * 1024 * 1024;
+
+  const $ = (id) => document.getElementById(id);
+	  const els = {
+	    laneClassic: $("laneClassic"), laneHardened: $("laneHardened"), laneLock: $("laneLock"),
+	    roleChooser: $("roleChooser"), senderFlow: $("senderFlow"), receiverFlow: $("receiverFlow"),
+	    beSender: $("beSender"), beReceiver: $("beReceiver"),
+	    fileInput: $("fileInput"), dropZone: $("dropZone"),
+	    s2: $("s2"), s3: $("s3"), s4: $("s4"), r2: $("r2"), r3: $("r3"),
+	    offerOut: $("offerOut"), copyOffer: $("copyOffer"),
+	    answerIn: $("answerIn"), acceptAnswer: $("acceptAnswer"), senderAuthCode: $("senderAuthCode"), confirmSenderAuth: $("confirmSenderAuth"),
+	    offerIn: $("offerIn"), acceptOffer: $("acceptOffer"),
+	    answerOut: $("answerOut"), copyAnswer: $("copyAnswer"), replyHint: $("replyHint"), receiverAuthCode: $("receiverAuthCode"), confirmReceiverAuth: $("confirmReceiverAuth"),
+	    transfer: $("transfer"), fileName: $("fileName"), fileMeta: $("fileMeta"),
+    progress: $("progress"), progressLabel: $("progressLabel"),
+    downloadLink: $("downloadLink"), status: $("status"),
+    openHow: $("openHow"), closeHow: $("closeHow"), howOverlay: $("howOverlay"),
+    sourceView: $("sourceView"), copySrc: $("copySrc"),
+    checkNetworkBtn: $("checkNetworkBtn"),
+  };
+
+	  let pc = null, channel = null, role = null, pendingFile = null;
+	  let mode = "classic", transferStarted = false, channelOpen = false, peerConfirmed = false;
+	  let localDescription = null, remoteDescription = null, receiverReady = false;
+
+  const setStatus = (t, cls) => { els.status.textContent = t; els.status.className = cls || ""; };
+  const fmtBytes = (n) => n < 1024 ? n + " B"
+    : n < 1024**2 ? (n/1024).toFixed(1) + " KB"
+    : n < 1024**3 ? (n/1024**2).toFixed(1) + " MB"
+    : (n/1024**3).toFixed(2) + " GB";
+  const setProgress = (s, t) => {
+    const pct = t ? Math.floor((s/t)*100) : 0;
+    els.progress.value = pct;
+    els.progressLabel.textContent = `${fmtBytes(s)} / ${fmtBytes(t)} (${pct}%)`;
+  };
+	  const showTransfer = () => els.transfer.classList.remove("hidden");
+	  const enable = (el) => el.classList.remove("muted");
+	  const disable = (el) => el.classList.add("muted");
+
+	  const enc = (obj) => btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+	  const dec = (str) => JSON.parse(decodeURIComponent(escape(atob(str.trim()))));
+
+	  async function digestCode(offer, answer) {
+	    const canonical = JSON.stringify({ offer: offer.sdp, answer: answer.sdp });
+	    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonical));
+	    const view = new DataView(digest);
+	    const code = String(view.getUint32(0) % 1000000).padStart(6, "0");
+	    return code.slice(0, 3) + " " + code.slice(3);
+	  }
+
+	  function lockLane() {
+	    transferStarted = true;
+	    els.laneClassic.disabled = true;
+	    els.laneHardened.disabled = true;
+	    els.laneLock.textContent = "Locked because transfer has started.";
+	  }
+
+	  function resetSession() {
+	    if (pc) pc.close();
+	    pc = null; channel = null; role = null; pendingFile = null;
+	    transferStarted = false; channelOpen = false; peerConfirmed = false;
+	    localDescription = null; remoteDescription = null; receiverReady = false;
+	    [els.senderFlow, els.receiverFlow, els.transfer, els.s4, els.r3, els.downloadLink].forEach((el) => el.classList.add("hidden"));
+	    [els.s2, els.s3, els.s4, els.r2, els.r3].forEach(disable);
+	    els.roleChooser.classList.remove("hidden");
+	    els.offerOut.value = ""; els.answerIn.value = ""; els.offerIn.value = ""; els.answerOut.value = "";
+	    els.senderAuthCode.textContent = "------"; els.receiverAuthCode.textContent = "------";
+	    els.confirmSenderAuth.disabled = false; els.confirmReceiverAuth.disabled = false;
+	    els.fileName.textContent = ""; els.fileMeta.textContent = ""; els.progressLabel.textContent = "";
+	    els.progress.value = 0; els.downloadLink.removeAttribute("href"); els.downloadLink.removeAttribute("download");
+	  }
+
+	  function setMode(next) {
+	    if (transferStarted) return;
+	    mode = next;
+	    resetSession();
+	    els.laneClassic.classList.toggle("active", mode === "classic");
+	    els.laneHardened.classList.toggle("active", mode === "hardened");
+	    els.laneClassic.disabled = false;
+	    els.laneHardened.disabled = false;
+	    els.laneLock.textContent = "Switch any time before transfer starts.";
+	    els.replyHint.textContent = mode === "hardened"
+	      ? "Send this back to the sender, then compare the verification code before accepting the file."
+	      : "Send this back to the sender. Once they paste it and click Connect, the transfer begins automatically.";
+	    setStatus(mode === "hardened"
+	      ? "Hardened lane selected. Transfer waits for a matching verification code."
+	      : "Classic lane selected. Transfer starts once the connection opens.");
+	  }
+
+	  function maybeSend() {
+	    if (role !== "sender" || !pendingFile || !channelOpen) return;
+	    if (mode === "hardened" && !peerConfirmed) return;
+	    sendFile(pendingFile);
+	  }
+
+  // Wait for full ICE gathering so all network candidates are inside the one code.
+  function waitForIce(pc) {
+    return new Promise((resolve) => {
+      if (pc.iceGatheringState === "complete") return resolve();
+      const check = () => {
+        if (pc.iceGatheringState === "complete") {
+          pc.removeEventListener("icegatheringstatechange", check);
+          resolve();
+        }
+      };
+      pc.addEventListener("icegatheringstatechange", check);
+      setTimeout(resolve, 4000);
+    });
+  }
+
+  function newPeer() {
+    const p = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    p.addEventListener("connectionstatechange", () => {
+      if (p.connectionState === "connected") setStatus("Connected directly to peer.", "ok");
+      if (p.connectionState === "failed")
+        setStatus("Connection failed. This network likely needs a relay, which this no-server version doesn't include.", "warn");
+    });
+    return p;
+  }
+
+  function setupChannel() {
+    channel.binaryType = "arraybuffer";
+	    channel.bufferedAmountLowThreshold = BUFFER_LOW;
+	    channel.addEventListener("open", () => {
+	      channelOpen = true;
+	      setStatus(mode === "hardened" && !peerConfirmed
+	        ? "Connected. Compare and confirm the verification code before transfer."
+	        : "Connected directly to peer.", "ok");
+	      maybeSend();
+	    });
+	    if (role === "receiver" && (mode === "classic" || receiverReady)) setupReceiver();
+	  }
+
+	  async function sendFile(file) {
+	    if (transferStarted) return;
+	    lockLane();
+	    showTransfer();
+    els.fileName.textContent = file.name;
+    els.fileMeta.textContent = fmtBytes(file.size);
+    channel.send(JSON.stringify({ kind: "meta", name: file.name, size: file.size, mime: file.type || "application/octet-stream" }));
+    let offset = 0;
+    const waitDrain = () => new Promise((res) => {
+      if (channel.bufferedAmount < BUFFER_HIGH) return res();
+      const on = () => { channel.removeEventListener("bufferedamountlow", on); res(); };
+      channel.addEventListener("bufferedamountlow", on);
+    });
+    while (offset < file.size) {
+      if (channel.bufferedAmount >= BUFFER_HIGH) await waitDrain();
+      const buf = await file.slice(offset, offset + CHUNK_SIZE).arrayBuffer();
+      channel.send(buf);
+      offset += buf.byteLength;
+      setProgress(offset, file.size);
+    }
+    channel.send(JSON.stringify({ kind: "done" }));
+    setStatus("Transfer complete.", "ok");
+  }
+
+  function setupReceiver() {
+    showTransfer();
+    let meta = null, received = 0, chunks = [], writer = null;
+    channel.addEventListener("message", async (ev) => {
+      if (typeof ev.data === "string") {
+	        const msg = JSON.parse(ev.data);
+	        if (msg.kind === "meta") {
+	          if (!transferStarted) lockLane();
+	          meta = msg;
+          els.fileName.textContent = meta.name;
+          els.fileMeta.textContent = fmtBytes(meta.size);
+          setStatus("Receiving…");
+          if (window.showSaveFilePicker) {
+            try { const h = await window.showSaveFilePicker({ suggestedName: meta.name }); writer = await h.createWritable(); }
+            catch { writer = null; }
+          }
+        } else if (msg.kind === "done") {
+          if (writer) { await writer.close(); setStatus("Saved to disk. Transfer complete.", "ok"); }
+          else {
+            const blob = new Blob(chunks, { type: meta.mime });
+            const url = URL.createObjectURL(blob);
+            els.downloadLink.href = url; els.downloadLink.download = meta.name;
+            els.downloadLink.textContent = "Save " + meta.name;
+            els.downloadLink.classList.remove("hidden");
+            setStatus("Transfer complete.", "ok");
+          }
+        }
+        return;
+	      }
+	      if (!transferStarted) lockLane();
+	      received += ev.data.byteLength;
+      if (writer) await writer.write(ev.data); else chunks.push(ev.data);
+      if (meta) setProgress(received, meta.size);
+    });
+  }
+
+	  els.laneClassic.addEventListener("click", () => setMode("classic"));
+	  els.laneHardened.addEventListener("click", () => setMode("hardened"));
+	  els.beSender.addEventListener("click", () => { role = "sender"; els.roleChooser.classList.add("hidden"); els.senderFlow.classList.remove("hidden"); });
+	  els.beReceiver.addEventListener("click", () => { role = "receiver"; els.roleChooser.classList.add("hidden"); els.receiverFlow.classList.remove("hidden"); });
+
+  async function startSender(file) {
+    pendingFile = file;
+    enable(els.s2);
+    setStatus("Building your invite code…");
+    pc = newPeer();
+    channel = pc.createDataChannel("file", { ordered: true });
+    setupChannel();
+	    const offer = await pc.createOffer();
+	    await pc.setLocalDescription(offer);
+	    await waitForIce(pc);
+	    localDescription = pc.localDescription;
+	    els.offerOut.value = enc(localDescription);
+	    enable(els.s3);
+	    setStatus("Invite code ready. Send it to the receiver, then paste their reply below.");
+	  }
+
+  els.fileInput.addEventListener("change", () => { if (els.fileInput.files.length) startSender(els.fileInput.files[0]); });
+  ["dragover","dragenter"].forEach((e) => els.dropZone.addEventListener(e, (ev) => { ev.preventDefault(); els.dropZone.classList.add("drag"); }));
+  ["dragleave","drop"].forEach((e) => els.dropZone.addEventListener(e, (ev) => { ev.preventDefault(); els.dropZone.classList.remove("drag"); }));
+  els.dropZone.addEventListener("drop", (ev) => { if (ev.dataTransfer.files.length) startSender(ev.dataTransfer.files[0]); });
+
+	  els.acceptAnswer.addEventListener("click", async () => {
+	    try {
+	      remoteDescription = dec(els.answerIn.value);
+	      await pc.setRemoteDescription(remoteDescription);
+	      if (mode === "hardened") {
+	        els.senderAuthCode.textContent = await digestCode(localDescription, remoteDescription);
+	        els.s4.classList.remove("hidden");
+	        enable(els.s4);
+	        setStatus("Reply accepted. Compare the verification code before sending.");
+	      } else {
+	        setStatus("Reply accepted. Establishing direct connection…");
+	      }
+	    }
+	    catch { setStatus("That reply code didn't parse. Check you copied the whole thing.", "warn"); }
+	  });
+
+  els.acceptOffer.addEventListener("click", async () => {
+    try {
+	      remoteDescription = dec(els.offerIn.value);
+	      pc = newPeer();
+	      pc.addEventListener("datachannel", (e) => { channel = e.channel; setupChannel(); });
+	      await pc.setRemoteDescription(remoteDescription);
+	      const answer = await pc.createAnswer();
+	      await pc.setLocalDescription(answer);
+	      await waitForIce(pc);
+	      localDescription = pc.localDescription;
+	      els.answerOut.value = enc(localDescription);
+	      enable(els.r2);
+	      if (mode === "hardened") {
+	        els.receiverAuthCode.textContent = await digestCode(remoteDescription, localDescription);
+	        els.r3.classList.remove("hidden");
+	        enable(els.r3);
+	        setStatus("Reply ready. Send it back, then compare the verification code.");
+	      } else {
+	        setStatus("Reply ready. Send it back to the sender.");
+	      }
+	    } catch { setStatus("That invite code didn't parse. Check you copied the whole thing.", "warn"); }
+	  });
+
+	  els.confirmSenderAuth.addEventListener("click", () => {
+	    peerConfirmed = true;
+	    els.confirmSenderAuth.disabled = true;
+	    setStatus(channelOpen ? "Verification confirmed. Starting transfer." : "Verification confirmed. Waiting for the connection to open.", "ok");
+	    maybeSend();
+	  });
+
+	  els.confirmReceiverAuth.addEventListener("click", () => {
+	    peerConfirmed = true;
+	    receiverReady = true;
+	    els.confirmReceiverAuth.disabled = true;
+	    setStatus("Verification confirmed. Waiting for the sender to start.", "ok");
+	    if (channel && !transferStarted) setupReceiver();
+	  });
+
+  async function copy(text, btn) {
+    try { await navigator.clipboard.writeText(text); const o = btn.textContent; btn.textContent = "Copied"; setTimeout(() => btn.textContent = o, 1500); }
+    catch {}
+  }
+  els.copyOffer.addEventListener("click", () => copy(els.offerOut.value, els.copyOffer));
+  els.copyAnswer.addEventListener("click", () => copy(els.answerOut.value, els.copyAnswer));
+
+  async function checkNetworkFit() {
+    const btn = els.checkNetworkBtn;
+    if (btn.disabled) return;
+    btn.disabled = true;
+    const originalText = btn.textContent;
+    btn.textContent = "Checking…";
+    setStatus("Checking whether this network can make direct connections…");
+
+    const testPc = newPeer();
+    testPc.createDataChannel("probe", { ordered: true });
+    const candidates = [];
+    testPc.addEventListener("icecandidate", (e) => {
+      if (e.candidate && e.candidate.candidate) candidates.push(e.candidate);
+    });
+
+    try {
+      const offer = await testPc.createOffer();
+      await testPc.setLocalDescription(offer);
+      await waitForIce(testPc);
+
+      const types = new Set(candidates.map((c) => (c.type || "").toLowerCase()));
+      if (types.has("srflx") || types.has("prflx")) {
+        setStatus("This network looks reachable. Direct transfer should work.", "ok");
+      } else if (types.has("host")) {
+        setStatus("This network only found local addresses. Direct transfer may fail unless both devices are on the same network.", "warn");
+      } else {
+        setStatus("No connection paths were found. Direct transfer probably will not work on this network.", "warn");
+      }
+    } catch (err) {
+      setStatus("Network check failed: " + (err && err.message ? err.message : "browser blocked the test."), "warn");
+    } finally {
+      testPc.close();
+      btn.disabled = false;
+      btn.textContent = originalText;
+    }
+  }
+  els.checkNetworkBtn.addEventListener("click", checkNetworkFit);
+
+  // ---- How-it-works modal + live source viewer ----
+  function openHow() {
+    els.howOverlay.classList.remove("hidden");
+    loadSource();
+  }
+  function closeHow() { els.howOverlay.classList.add("hidden"); }
+  els.openHow.addEventListener("click", openHow);
+  const discBtn = document.getElementById("openHowFromDisclaimer");
+  if (discBtn) discBtn.addEventListener("click", () => {
+    openHow();
+    // Jump to the security section once the modal is open.
+    setTimeout(() => {
+      const sec = document.getElementById("securitySection");
+      if (sec) sec.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+  });
+  els.closeHow.addEventListener("click", closeHow);
+  els.howOverlay.addEventListener("click", (e) => { if (e.target === els.howOverlay) closeHow(); });
+
+  let sourceLoaded = false;
+  async function loadSource() {
+    if (sourceLoaded) return;
+    // Fetch this page's own file so the displayed code is exactly what's running.
+    try {
+      const res = await fetch(window.location.href);
+      const text = await res.text();
+      els.sourceView.textContent = text;
+      sourceLoaded = true;
+    } catch (e) {
+      // Happens when opened directly from disk (file://) where fetch is blocked.
+      els.sourceView.textContent =
+        "The live source couldn't be loaded automatically in this context " +
+        "(this usually happens when the file is opened directly from your " +
+        "computer rather than served over the web).\n\n" +
+        "To read the complete code, use your browser's \"View Source\" " +
+        "(Ctrl+U or Cmd+Option+U), or open this single HTML file in any text editor. " +
+        "Everything the program does is contained in that one file.";
+    }
+  }
+  els.copySrc.addEventListener("click", () => copy(els.sourceView.textContent, els.copySrc));
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3858 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Perry — Research Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #1c2128;
+      --bg-elevated: #21262d;
+      --border-subtle: #30363d;
+      --border-active: #484f58;
+      --text-primary: #e6edf3;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent: #2dd4bf;
+      --accent-dim: #0d9488;
+      --accent-glow: rgba(45, 212, 191, 0.12);
+      --accent-green: #3fb950;
+      --accent-amber: #d29922;
+      --accent-red: #f85149;
+      --accent-purple: #bc8cff;
+      --font-display: 'Fraunces', Georgia, serif;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'IBM Plex Mono', 'SF Mono', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Layout */
+    .app-container {
+      display: grid;
+      grid-template-columns: 300px 1fr 360px;
+      grid-template-rows: auto 1fr;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-logo {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+    }
+
+    .header-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .header-tagline {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: 4px;
+      font-weight: 400;
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background 0.3s ease;
+      flex-shrink: 0;
+    }
+
+    .status-dot.loading {
+      background: var(--accent-amber);
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-dot.ready {
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+    }
+
+    .status-dot.error {
+      background: var(--accent-red);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.35;
+      }
+    }
+
+    /* Sidebar */
+    .sidebar {
+      background: var(--bg-secondary);
+      border-right: 1px solid var(--border-subtle);
+      overflow-y: auto;
+      padding: 20px 16px;
+    }
+
+    .sidebar-section {
+      margin-bottom: 28px;
+    }
+
+    .sidebar-section-title {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding-left: 4px;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 5px;
+      padding-left: 2px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 9px 11px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Main Chat Area */
+    .main-panel {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-primary);
+      overflow: hidden;
+    }
+
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 28px 24px;
+      scroll-behavior: smooth;
+    }
+
+    .message {
+      max-width: 780px;
+      margin: 0 auto 20px;
+      animation: fadeInUp 0.25s ease;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-user {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .message-user .message-content {
+      background: var(--accent-dim);
+      color: #fff;
+      border-radius: 18px 18px 4px 18px;
+      padding: 12px 18px;
+      max-width: 68%;
+      font-size: 0.95rem;
+    }
+
+    .message-assistant .message-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 4px 18px 18px 18px;
+      padding: 16px 20px;
+    }
+
+    .message-tool-call {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-left: 2px solid var(--accent-purple);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+
+    .message-tool-call .tool-label {
+      color: var(--accent-purple);
+      font-weight: 500;
+      margin-bottom: 5px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .message-tool-call pre {
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .message-tool-result {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-left: 2px solid var(--accent-green);
+      border-radius: 0 8px 8px 0;
+      padding: 10px 14px;
+      margin: 10px 0;
+      font-size: 0.82rem;
+    }
+
+    .message-tool-result .result-label {
+      color: var(--accent-green);
+      font-weight: 500;
+      font-family: var(--font-mono);
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .message-tool-result .result-summary {
+      color: var(--text-secondary);
+    }
+
+    .thinking-indicator {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .thinking-dots {
+      display: flex;
+      gap: 4px;
+    }
+
+    .thinking-dots span {
+      width: 5px;
+      height: 5px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+      opacity: 0.6;
+    }
+
+    .thinking-dots span:nth-child(1) {
+      animation-delay: -0.32s;
+    }
+
+    .thinking-dots span:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    /* Input Area */
+    .input-area {
+      padding: 16px 24px 20px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .input-wrapper {
+      max-width: 780px;
+      margin: 0 auto;
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 13px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 0.93rem;
+      resize: none;
+      min-height: 48px;
+      max-height: 180px;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      line-height: 1.5;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .send-btn {
+      padding: 12px 22px;
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: opacity 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .send-btn:hover {
+      opacity: 0.88;
+    }
+
+    .send-btn:active {
+      transform: scale(0.96);
+    }
+
+    .send-btn:disabled {
+      background: var(--bg-elevated);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* Research Panel */
+    .research-panel {
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border-subtle);
+      overflow-y: auto;
+      padding: 20px 16px;
+    }
+
+    .research-section {
+      margin-bottom: 24px;
+    }
+
+    .research-section-title {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 2px;
+    }
+
+    .research-section-title .count {
+      background: var(--bg-elevated);
+      padding: 1px 7px;
+      border-radius: 20px;
+      font-size: 0.65rem;
+      color: var(--text-secondary);
+    }
+
+    .source-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 11px 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .source-card:hover {
+      border-color: var(--accent);
+      background: var(--bg-elevated);
+    }
+
+    .source-title {
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 3px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.4;
+    }
+
+    .source-url {
+      font-size: 0.72rem;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .source-snippet {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      line-height: 1.45;
+    }
+
+    .research-notes {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    .note-meta,
+    .report-meta {
+      margin-top: 6px;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+    }
+
+    .role-pill {
+      display: inline-block;
+      margin-right: 5px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(45, 212, 191, 0.1);
+      color: var(--accent);
+    }
+
+    .compact-textarea {
+      width: 100%;
+      min-height: 72px;
+      resize: vertical;
+      margin-bottom: 8px;
+    }
+
+    .report-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+    }
+
+    .report-card:hover {
+      border-color: var(--accent);
+      background: var(--bg-elevated);
+    }
+
+    .report-card-title {
+      color: var(--text-primary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      line-height: 1.35;
+    }
+
+    .inline-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state-icon {
+      margin-bottom: 16px;
+      opacity: 0.45;
+    }
+
+    .empty-state-text {
+      font-size: 0.88rem;
+      line-height: 1.6;
+      color: var(--text-muted);
+    }
+
+    .perry-explanation {
+      margin-top: 32px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 24px;
+    }
+
+    .explanation-section h4 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      margin-bottom: 10px;
+      margin-top: 0;
+    }
+
+    .explanation-section p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .explanation-footer {
+      grid-column: 1 / -1;
+      text-align: center;
+      background: var(--bg-tertiary);
+      padding: 10px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .explanation-footer p {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin: 0;
+    }
+
+    @media (max-width: 640px) {
+      .perry-explanation {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+
+    .export-btn {
+      width: 100%;
+      margin-top: 8px;
+      padding: 7px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-family: var(--font-sans);
+      transition: background 0.15s ease, border-color 0.15s ease;
+      display: none;
+    }
+
+    .export-btn:hover {
+      background: var(--border-subtle);
+      border-color: var(--border-active);
+    }
+
+    /* Progress bar */
+    .progress-container {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      height: 3px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-purple));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Load button */
+    #load-model-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 10px;
+      background: var(--accent);
+      color: #0d1117;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      font-family: var(--font-sans);
+      transition: opacity 0.15s ease;
+    }
+
+    #load-model-btn:hover {
+      opacity: 0.88;
+    }
+
+    #load-model-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Markdown rendering */
+    .markdown-content h1,
+    .markdown-content h2,
+    .markdown-content h3 {
+      font-family: var(--font-display);
+      margin: 1.2em 0 0.5em;
+      line-height: 1.3;
+    }
+
+    .markdown-content h1 {
+      font-size: 1.4rem;
+    }
+
+    .markdown-content h2 {
+      font-size: 1.15rem;
+      color: var(--accent);
+    }
+
+    .markdown-content h3 {
+      font-size: 1rem;
+    }
+
+    .markdown-content p {
+      margin-bottom: 0.85em;
+    }
+
+    .markdown-content code {
+      font-family: var(--font-mono);
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.84em;
+    }
+
+    .markdown-content pre {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      padding: 14px 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 1em 0;
+    }
+
+    .markdown-content pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .markdown-content ul,
+    .markdown-content ol {
+      margin: 0.8em 0;
+      padding-left: 1.5em;
+    }
+
+    .markdown-content li {
+      margin-bottom: 0.4em;
+    }
+
+    .markdown-content a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .markdown-content a:hover {
+      text-decoration: underline;
+    }
+
+    .markdown-content blockquote {
+      border-left: 2px solid var(--accent);
+      padding-left: 16px;
+      margin: 1em 0;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-subtle);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border-active);
+    }
+
+    /* About button */
+    .about-btn {
+      background: none;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.72rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.15s ease, border-color 0.15s ease;
+      margin-left: 10px;
+      flex-shrink: 0;
+      font-family: var(--font-sans);
+    }
+
+    .about-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-active);
+      border-radius: 14px;
+      padding: 30px 34px 26px;
+      max-width: 400px;
+      width: 92%;
+      position: relative;
+    }
+
+    .modal-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+      color: var(--text-primary);
+    }
+
+    .modal-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .modal-body p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      line-height: 1.65;
+    }
+
+    .modal-body a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .modal-body a:hover {
+      text-decoration: underline;
+    }
+
+    .modal-divider {
+      border: none;
+      border-top: 1px solid var(--border-subtle);
+      margin: 16px 0;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.35rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    /* Label row with inline help button */
+    .form-label-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 5px;
+    }
+
+    .form-label-row .form-label {
+      margin-bottom: 0;
+    }
+
+    .help-btn {
+      background: none;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .help-btn:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    /* Code block inside modal */
+    .modal-code {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin: 12px 0;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      overflow-x: auto;
+      white-space: pre;
+      line-height: 1.5;
+      max-height: 220px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .copy-code-btn {
+      display: block;
+      width: 100%;
+      margin-top: 6px;
+      padding: 7px;
+      background: var(--accent-dim);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      transition: opacity 0.15s ease;
+    }
+
+    .copy-code-btn:hover {
+      opacity: 0.88;
+    }
+
+    /* Wider modal for the worker instructions */
+    .modal-box-wide {
+      max-width: 560px;
+    }
+
+    /* Advanced settings */
+    .advanced-toggle {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: var(--font-sans);
+    }
+
+    .advanced-toggle:hover {
+      color: var(--text-secondary);
+    }
+
+    .advanced-chevron {
+      transition: transform 0.2s ease;
+      font-style: normal;
+    }
+
+    .advanced-toggle.open .advanced-chevron {
+      transform: rotate(180deg);
+    }
+
+    .advanced-content {
+      display: none;
+      margin-top: 14px;
+    }
+
+    .advanced-content.open {
+      display: block;
+    }
+
+    .advanced-help {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: 10px;
+      padding: 8px 10px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      border-left: 2px solid var(--accent-dim);
+    }
+
+    .advanced-help em {
+      font-style: normal;
+      font-family: var(--font-mono);
+      font-size: 0.71rem;
+      background: var(--bg-elevated);
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: var(--accent);
+    }
+
+    .agent-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 10px 11px;
+      margin-bottom: 8px;
+    }
+
+    .agent-card-header {
+      margin-bottom: 7px;
+    }
+
+    .agent-label-input {
+      font-weight: 600 !important;
+      font-size: 0.8rem !important;
+      color: var(--accent) !important;
+    }
+
+    .agent-field {
+      margin-bottom: 6px;
+    }
+
+    .agent-textarea {
+      resize: vertical;
+      min-height: 52px;
+      font-size: 0.74rem !important;
+      line-height: 1.45 !important;
+      font-family: var(--font-sans) !important;
+    }
+
+    .advanced-subheading {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin: 14px 0 8px;
+    }
+
+    .reset-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 7px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-family: var(--font-sans);
+      transition: background 0.15s ease;
+    }
+
+    .reset-btn:hover {
+      background: var(--border-subtle);
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 1200px) {
+      .app-container {
+        grid-template-columns: 280px 1fr;
+      }
+
+      .research-panel {
+        display: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .app-container {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        display: none;
+      }
+    }
+    /* ============================================================
+       Collection mode — added for perry-v2 collection lane port.
+       ============================================================ */
+    .mode-tabs {
+      display: flex;
+      gap: 4px;
+      padding: 8px 24px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      background: var(--bg-secondary);
+    }
+    .mode-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      border-bottom: none;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.15s;
+    }
+    .mode-tab:hover { color: var(--text-primary); }
+    .mode-tab.active {
+      background: var(--bg-primary);
+      border-color: var(--border-subtle);
+      color: var(--accent);
+      position: relative;
+      top: 1px;
+    }
+    .config-link {
+      background: transparent;
+      border: none;
+      color: var(--accent);
+      font-size: 0.8rem;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-family: inherit;
+      text-decoration: underline dotted;
+    }
+    .config-link:hover { color: var(--text-primary); }
+
+    /* Collection setup modal (reuses .modal-overlay / .modal-box patterns) */
+    #collection-modal .modal-box,
+    #advanced-modal .modal-box { max-width: 640px; width: 90%; max-height: 85vh; overflow-y: auto; }
+    .coll-field { margin-bottom: 14px; }
+    .coll-field label {
+      display: block; font-size: 0.78rem; font-weight: 600;
+      color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    .coll-field .hint { font-size: 0.74rem; color: var(--text-muted); margin-top: 4px; }
+    .coll-divider { height: 1px; background: var(--border-subtle); margin: 14px 0; }
+    .coll-columns { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+    .coll-col-row {
+      display: grid; grid-template-columns: auto 1fr 150px auto;
+      align-items: center; gap: 6px;
+    }
+    .coll-col-row .form-input { padding: 6px 8px; font-size: 0.85rem; }
+    .coll-col-reorder { display: flex; flex-direction: column; gap: 2px; }
+    .coll-icon-btn {
+      width: 22px; height: 22px; background: var(--bg-tertiary);
+      border: 1px solid var(--border-subtle); border-radius: 4px;
+      color: var(--text-muted); cursor: pointer; font-size: 0.7rem;
+      display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .coll-icon-btn:hover:not(:disabled) { color: var(--text-primary); background: var(--bg-elevated); }
+    .coll-icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    .coll-add-col {
+      background: transparent; border: 1px dashed var(--accent-dim);
+      color: var(--accent); padding: 6px 10px; font-size: 0.8rem;
+      border-radius: 6px; cursor: pointer; font-family: inherit;
+    }
+    .coll-add-col:hover { background: var(--accent-glow); }
+    .coll-start-btn {
+      background: var(--accent); color: #000; border: none;
+      padding: 10px 20px; font-size: 0.9rem; font-weight: 600;
+      border-radius: 6px; cursor: pointer; font-family: inherit;
+      margin-top: 8px; float: right;
+    }
+    .coll-start-btn:hover { filter: brightness(1.1); }
+    .coll-error { color: var(--accent-red); font-size: 0.8rem; margin-top: 8px; }
+
+    /* Research plan box — shown before research begins, with approval button */
+    .plan-box {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-active);
+      border-left: 3px solid var(--accent-purple);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 4px;
+    }
+
+    .plan-header {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent-purple);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+    }
+
+    .plan-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .plan-list {
+      margin: 4px 0 10px 18px;
+      padding: 0;
+      font-size: 0.83rem;
+      color: var(--text-primary);
+    }
+
+    .plan-list li {
+      margin-bottom: 3px;
+    }
+
+    .plan-continue-btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      margin-top: 4px;
+    }
+
+    .plan-continue-btn:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .plan-continue-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Collection summary — source audit + diagnostics appended after the table */
+    .collection-summary {
+      margin-top: 20px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .collection-summary { grid-template-columns: 1fr; }
+    }
+
+    .audit-section { min-width: 0; }
+
+    .audit-heading {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .audit-subheading {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin: 12px 0 6px;
+    }
+
+    .audit-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+      table-layout: auto;
+    }
+
+    .audit-table th {
+      background: var(--bg-secondary);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      text-align: left;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .audit-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      vertical-align: top;
+      word-break: break-word;
+    }
+
+    .audit-failure-list {
+      margin: 0;
+      padding-left: 16px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .audit-failure-list li { margin-bottom: 3px; }
+
+    .audit-failure-source {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Live collection results table */
+    .collection-results {
+      padding: 16px 24px; overflow-y: auto; height: 100%;
+    }
+    .collection-results h3 {
+      font-size: 0.9rem; color: var(--text-secondary);
+      margin-bottom: 10px; display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .collection-results h3 .count {
+      background: var(--accent-glow); color: var(--accent);
+      padding: 2px 8px; border-radius: 10px; font-size: 0.75rem;
+    }
+    .collection-table {
+      width: 100%; border-collapse: collapse; font-size: 0.8rem;
+      table-layout: auto;
+    }
+    .collection-table th, .collection-table td {
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 8px 10px; text-align: left; vertical-align: top;
+      max-width: 280px; word-break: break-word;
+    }
+    .collection-table th {
+      background: var(--bg-secondary); color: var(--text-secondary);
+      font-weight: 600; position: sticky; top: 0;
+    }
+    .collection-table td a {
+      color: var(--accent); text-decoration: none; font-size: 0.78rem;
+    }
+    .collection-table td a:hover { text-decoration: underline; }
+    .collection-progress {
+      font-size: 0.78rem; color: var(--text-muted);
+      font-style: italic; padding: 6px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <!-- Platypus SVG icon -->
+        <svg class="header-logo" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Body -->
+          <ellipse cx="30" cy="38" rx="18" ry="12" fill="#2dd4bf" opacity="0.9" />
+          <!-- Head -->
+          <ellipse cx="46" cy="30" rx="11" ry="9" fill="#2dd4bf" />
+          <!-- Bill (duck bill shape) -->
+          <path d="M55 30 Q65 28 64 33 Q63 37 55 34 Z" fill="#0d9488" />
+          <!-- Eye -->
+          <circle cx="50" cy="27" r="2" fill="#0d1117" />
+          <circle cx="50.7" cy="26.4" r="0.6" fill="white" />
+          <!-- Tail -->
+          <path d="M12 38 Q2 32 4 42 Q6 48 14 44 Z" fill="#0d9488" />
+          <!-- Front leg -->
+          <ellipse cx="36" cy="50" rx="4" ry="2.5" fill="#0d9488" transform="rotate(-15 36 50)" />
+          <!-- Back leg -->
+          <ellipse cx="22" cy="50" rx="4" ry="2.5" fill="#0d9488" transform="rotate(15 22 50)" />
+          <!-- Belly -->
+          <ellipse cx="30" cy="40" rx="11" ry="6" fill="#99f6e4" opacity="0.5" />
+          <!-- Ear/bump -->
+          <circle cx="44" cy="22" r="3" fill="#2dd4bf" />
+          <!-- Fedora brim -->
+          <ellipse cx="46" cy="22" rx="13" ry="3" fill="#7c5c2e" />
+          <!-- Fedora crown -->
+          <rect x="37" y="10" width="18" height="13" rx="4" fill="#a0742a" />
+          <!-- Fedora indent (crease) -->
+          <path d="M40 10 Q46 14 52 10" stroke="#7c5c2e" stroke-width="1.2" fill="none" />
+          <!-- Fedora band -->
+          <rect x="37" y="20" width="18" height="2.5" rx="1" fill="#5a3e18" />
+          <!-- Magnifying glass handle -->
+          <line x1="18" y1="52" x2="26" y2="44" stroke="#7c5c2e" stroke-width="2.5" stroke-linecap="round" />
+          <!-- Magnifying glass circle -->
+          <circle cx="29" cy="41" r="5.5" stroke="#a0742a" stroke-width="2" fill="none" />
+          <!-- Magnifying glass lens glint -->
+          <circle cx="27.5" cy="39.5" r="1.2" fill="white" opacity="0.5" />
+        </svg>
+        <h1 class="header-title"><em>Perry</em><span class="header-tagline">Multiple Personality Research Agent Living
+            in your Browser</span></h1>
+        <button class="about-btn" id="about-btn" title="About Perry">ⓘ</button>
+      </div>
+      <div class="header-status">
+        <div class="status-indicator">
+          <div id="model-status-dot" class="status-dot"></div>
+          <span id="model-status-text">Initializing...</span>
+        </div>
+        <div class="status-indicator">
+          <div id="embed-status-dot" class="status-dot"></div>
+          <span id="embed-status-text">Embeddings</span>
+        </div>
+        <div class="status-indicator">
+          <div id="webgpu-status-dot" class="status-dot"></div>
+          <span id="webgpu-status-text">WebGPU</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-section">
+        <h3 class="sidebar-section-title">API Configuration</h3>
+        <div class="form-group">
+          <label class="form-label" for="brave-api-key">Brave Search API Key</label>
+          <input type="password" id="brave-api-key" class="form-input" placeholder="BSA...">
+        </div>
+        <div class="form-group">
+          <div class="form-label-row">
+            <label class="form-label" for="cf-worker-url">Cloudflare Worker URL</label>
+            <button class="help-btn" id="cf-worker-help-btn" title="How to set up the Cloudflare Worker">?</button>
+          </div>
+          <input type="url" id="cf-worker-url" class="form-input" placeholder="https://your-worker.workers.dev">
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-section-title">Model Settings</h3>
+        <div class="form-group">
+          <label class="form-label" for="max-iterations">Total Searches (÷ 4 angles)</label>
+          <input type="number" id="max-iterations" class="form-input" value="12" min="4" max="40">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="max-context-notes">Max Notes in Report</label>
+          <input type="number" id="max-context-notes" class="form-input" value="12" min="1" max="20">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="temperature">Temperature</label>
+          <input type="number" id="temperature" class="form-input" value="0" min="0" max="1" step="0.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="streamline-iterations">Gap-fill Iterations</label>
+          <input type="number" id="streamline-iterations" class="form-input" value="2" min="1" max="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="fact-check-enabled">Fact-check Final Report</label>
+          <select id="fact-check-enabled" class="form-input">
+            <option value="yes" selected>Yes</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
+
+
+
+      <div class="sidebar-section">
+        <h3 class="sidebar-section-title">Model Loading</h3>
+        <div class="progress-container">
+          <div id="load-progress" class="progress-bar"></div>
+        </div>
+        <p id="load-status" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
+          Click "Load Model" to initialize
+        </p>
+        <button id="load-model-btn" onclick="initializeAgent()">Load Model</button>
+      </div>
+
+    </aside>
+
+    <!-- Main Chat Panel -->
+    <main class="main-panel">
+      <div class="mode-tabs">
+        <button class="mode-tab active" id="mode-tab-report" onclick="setMode('report')">Report mode</button>
+        <button class="mode-tab" id="mode-tab-collection" onclick="setMode('collection')">Collection mode</button>
+      </div>
+      <div id="chat-container" class="chat-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">
+            <svg width="272" height="272" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="30" cy="38" rx="18" ry="12" fill="#2dd4bf" opacity="0.9" />
+              <ellipse cx="46" cy="30" rx="11" ry="9" fill="#2dd4bf" />
+              <path d="M55 30 Q65 28 64 33 Q63 37 55 34 Z" fill="#0d9488" />
+              <circle cx="50" cy="27" r="2" fill="#0d1117" />
+              <circle cx="50.7" cy="26.4" r="0.6" fill="white" />
+              <path d="M12 38 Q2 32 4 42 Q6 48 14 44 Z" fill="#0d9488" />
+              <ellipse cx="36" cy="50" rx="4" ry="2.5" fill="#0d9488" transform="rotate(-15 36 50)" />
+              <ellipse cx="22" cy="50" rx="4" ry="2.5" fill="#0d9488" transform="rotate(15 22 50)" />
+              <ellipse cx="30" cy="40" rx="11" ry="6" fill="#99f6e4" opacity="0.5" />
+              <circle cx="44" cy="22" r="3" fill="#2dd4bf" />
+              <!-- Fedora brim -->
+              <ellipse cx="46" cy="22" rx="13" ry="3" fill="#7c5c2e" />
+              <!-- Fedora crown -->
+              <rect x="37" y="10" width="18" height="13" rx="4" fill="#a0742a" />
+              <!-- Fedora indent (crease) -->
+              <path d="M40 10 Q46 14 52 10" stroke="#7c5c2e" stroke-width="1.2" fill="none" />
+              <!-- Fedora band -->
+              <rect x="37" y="20" width="18" height="2.5" rx="1" fill="#5a3e18" />
+              <!-- Magnifying glass handle -->
+              <line x1="18" y1="52" x2="26" y2="44" stroke="#7c5c2e" stroke-width="2.5" stroke-linecap="round" />
+              <!-- Magnifying glass circle -->
+              <circle cx="29" cy="41" r="5.5" stroke="#a0742a" stroke-width="2" fill="none" />
+              <!-- Magnifying glass lens glint -->
+              <circle cx="27.5" cy="39.5" r="1.2" fill="white" opacity="0.5" />
+            </svg>
+          </div>
+          <p class="empty-state-text">
+            Hi, I'm <strong style="color: var(--accent);">Perry</strong>. Load the model and ask me a research
+            question.<br>
+            I'll search, read, and synthesize findings into a structured report.
+          </p>
+
+          <div class="perry-explanation">
+            <div class="explanation-section">
+              <h4>How it works</h4>
+              <p>Perry runs entirely in your browser using <strong>WebGPU</strong>. It generates a research plan, then runs four specialized search passes — triaging results by relevance before fetching — extracts structured notes, and synthesizes them into a cited report. Nothing leaves your machine.</p>
+            </div>
+            <div class="explanation-section">
+              <h4>Default research angles</h4>
+              <p>Perry searches through four general-purpose lenses: <strong>Overview & Background</strong>, <strong>Data & Statistics</strong>, <strong>Expert Analysis</strong>, and <strong>News & Reports</strong>. Each angle generates targeted queries and extracts different kinds of evidence.</p>
+            </div>
+            <div class="explanation-footer">
+              <p>You can customize angles, report sections, and extraction prompts in <strong>Advanced Settings</strong>. Use <strong>Collection mode</strong> to build a structured table instead of a report.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea id="user-input" class="input-field" placeholder="Ask a research question..." rows="1"></textarea>
+          <button id="send-btn" class="send-btn" onclick="handleUserInput()" disabled>
+            Research
+          </button>
+        </div>
+        <div id="collection-config-row" style="display:none; padding: 6px 0 0; text-align: right;">
+          <button class="config-link" onclick="openCollectionModal()">⚙ Configure columns & strategy…</button>
+        </div>
+        <div id="report-config-row" style="padding: 6px 0 0; text-align: right;">
+          <button class="config-link" onclick="openAdvancedModal()">⚙ Advanced settings (research angles & sections)…</button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Research Panel -->
+    <aside class="research-panel">
+      <div class="research-section">
+        <h3 class="research-section-title">
+          Sources Found
+          <span id="sources-count" class="count">0</span>
+        </h3>
+        <div id="sources-list">
+          <div class="empty-state" style="padding: 20px;">
+            <p class="empty-state-text" style="font-size: 0.8rem;">
+              Sources will appear here as the agent finds them.
+            </p>
+          </div>
+        </div>
+        <button id="export-sources-btn" class="export-btn" onclick="exportSourcesCSV()">Export to CSV</button>
+      </div>
+
+      <div class="research-section">
+        <h3 class="research-section-title">
+          Research Notes
+          <span id="notes-count" class="count">0</span>
+        </h3>
+        <div id="research-notes" class="research-notes">
+          <div class="empty-state" style="padding: 20px;">
+            <p class="empty-state-text" style="font-size: 0.8rem;">
+              Notes saved during research will appear here.
+            </p>
+          </div>
+        </div>
+        <button id="export-notes-btn" class="export-btn" onclick="exportNotesCSV()">Export to CSV</button>
+      </div>
+
+      <div class="research-section">
+        <h3 class="research-section-title">
+          Report History
+          <span id="reports-count" class="count">0</span>
+        </h3>
+        <div id="reports-list">
+          <div class="empty-state" style="padding: 20px;">
+            <p class="empty-state-text" style="font-size: 0.8rem;">
+              Completed reports will be saved here.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="research-section">
+        <h3 class="research-section-title">Follow-up</h3>
+        <textarea id="followup-input" class="form-input compact-textarea" placeholder="Ask a follow-up using current notes..." rows="3"></textarea>
+        <button id="followup-btn" class="export-btn" style="display:block" onclick="submitFollowup()">Answer from notes</button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- About Modal -->
+  <div class="modal-overlay" id="about-modal" style="display:none">
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close">×</button>
+      <h2 class="modal-title"><em>Perry</em> Research Agent</h2>
+      <div class="modal-body">
+        <p>Made with <a href="https://claude.ai" target="_blank">Claude</a> by <strong>Guillen Torres</strong></p>
+        <p>Investigations Lab, Human Rights Center</p>
+        <hr class="modal-divider">
+        <p>Comments? Bugs? Suggestions?<br><a href="mailto:info@osinv.org">info@osinv.org</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cloudflare Worker Help Modal -->
+  <div class="modal-overlay" id="cf-worker-modal" style="display:none">
+    <div class="modal-box modal-box-wide">
+      <button class="modal-close" id="cf-worker-modal-close">×</button>
+      <h2 class="modal-title">Setting up your <em>Cloudflare Worker</em></h2>
+      <div class="modal-body">
+        <p>Perry routes Brave Search and webpage fetching through a single worker you host for free on Cloudflare. Takes about 2 minutes.</p>
+        <hr class="modal-divider">
+        <p><strong>Step 1</strong> — Go to <a href="https://workers.cloudflare.com" target="_blank" rel="noopener">workers.cloudflare.com</a>, log in, and click <em>Create a Worker</em>.</p>
+        <p><strong>Step 2</strong> — Replace all the default code with the script below. <strong>Before deploying, edit the <code>ALLOWED_ORIGINS</code> array</strong> to include your app's domain (the line is marked with a comment).</p>
+        <div class="modal-code" id="cf-worker-code">const BRAVE_SEARCH_BASE = "https://api.search.brave.com";
+
+// Add every domain you serve this app from.
+const ALLOWED_ORIGINS = [
+  "http://localhost:8000",
+  "http://127.0.0.1:8000",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  // "https://yourdomain.com",  ← uncomment and replace with your domain
+];
+
+const MAX_PROXY_BYTES = 1_000_000;
+const MAX_REDIRECTS = 3;
+const ALLOWED_PROXY_PROTOCOLS = new Set(["http:", "https:"]);
+const ALLOWED_PROXY_CONTENT_TYPES = [
+  "text/html", "text/plain", "application/xhtml+xml",
+  "application/xml", "text/xml",
+];
+
+export default {
+  async fetch(request, env, ctx) {
+    if (request.method === "OPTIONS") {
+      if (!isAllowedOrigin(request)) return new Response("Forbidden", { status: 403 });
+      return corsResponse(null, 204, request);
+    }
+    if (!isAllowedOrigin(request)) return new Response("Forbidden", { status: 403 });
+    if (request.method !== "GET") return corsResponse("Method Not Allowed", 405, request);
+
+    const url = new URL(request.url);
+
+    // Webpage proxy: /proxy?url=https://example.com
+    if (url.pathname.startsWith("/proxy")) {
+      const targetUrl = url.searchParams.get("url");
+      if (!targetUrl) return corsResponse("Missing url parameter", 400, request);
+      let parsedTarget;
+      try { parsedTarget = new URL(targetUrl); } catch {
+        return corsResponse("Invalid url parameter", 400, request);
+      }
+      if (!ALLOWED_PROXY_PROTOCOLS.has(parsedTarget.protocol))
+        return corsResponse("Unsupported URL protocol", 400, request);
+      try {
+        const response = await fetchProxyTarget(parsedTarget.toString());
+        const contentType = response.headers.get("Content-Type") || "text/html";
+        const normalized = contentType.split(";")[0].trim().toLowerCase();
+        if (!ALLOWED_PROXY_CONTENT_TYPES.includes(normalized))
+          return corsResponse("Unsupported content type", 415, request);
+        const body = await readLimitedText(response, MAX_PROXY_BYTES);
+        return corsResponse(body, response.status, request, { "Content-Type": contentType });
+      } catch (err) {
+        return corsResponse(`Failed to fetch: ${err.message}`, 502, request);
+      }
+    }
+
+    // Brave Search relay: /res/v1/web/search?q=...
+    if (!url.pathname.startsWith("/res/v1/"))
+      return corsResponse("Not Found", 404, request);
+
+    const apiKey = request.headers.get("X-Subscription-Token");
+    if (!apiKey)
+      return corsResponse(JSON.stringify({ error: "Missing X-Subscription-Token" }), 401, request, { "Content-Type": "application/json" });
+
+    const braveUrl = `${BRAVE_SEARCH_BASE}${url.pathname}${url.search}`;
+    let braveResponse;
+    try {
+      braveResponse = await fetch(braveUrl, {
+        method: "GET",
+        headers: { Accept: "application/json", "Accept-Encoding": "gzip", "X-Subscription-Token": apiKey },
+      });
+    } catch (err) {
+      return corsResponse(JSON.stringify({ error: err.message }), 502, request, { "Content-Type": "application/json" });
+    }
+    const body = await braveResponse.text();
+    return corsResponse(body, braveResponse.status, request, {
+      "Content-Type": braveResponse.headers.get("Content-Type") || "application/json",
+    });
+  },
+};
+
+function corsResponse(body, status, request, extraHeaders = {}) {
+  const origin = request.headers.get("Origin");
+  return new Response(body, {
+    status,
+    headers: {
+      "Access-Control-Allow-Origin": origin,
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, X-Subscription-Token",
+      "Access-Control-Max-Age": "86400",
+      "Vary": "Origin",
+      ...extraHeaders,
+    },
+  });
+}
+
+function isAllowedOrigin(request) {
+  const origin = request.headers.get("Origin");
+  return origin && ALLOWED_ORIGINS.includes(origin);
+}
+
+async function fetchProxyTarget(url, redirectsRemaining = MAX_REDIRECTS) {
+  const response = await fetch(url, {
+    method: "GET", redirect: "manual",
+    headers: {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,text/plain;q=0.8",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    },
+  });
+  if ([301, 302, 303, 307, 308].includes(response.status)) {
+    if (redirectsRemaining <= 0) throw new Error("Too many redirects");
+    const location = response.headers.get("Location");
+    if (!location) throw new Error("Redirect without location");
+    const nextUrl = new URL(location, url);
+    if (!ALLOWED_PROXY_PROTOCOLS.has(nextUrl.protocol)) throw new Error("Redirected to unsupported protocol");
+    return fetchProxyTarget(nextUrl.toString(), redirectsRemaining - 1);
+  }
+  return response;
+}
+
+async function readLimitedText(response, maxBytes) {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const chunks = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > maxBytes) throw new Error(`Response exceeds ${maxBytes} bytes`);
+    chunks.push(value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { body.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder().decode(body);
+}</div>
+        <button class="copy-code-btn" id="copy-worker-code-btn">📋 Copy worker code</button>
+        <p><strong>Step 3</strong> — Click <em>Deploy</em>. Copy the worker URL (e.g. <code>https://your-worker.workers.dev</code>) and paste it into the <strong>Cloudflare Worker URL</strong> field in the sidebar.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Settings Modal (Report mode: research angles + sections + allowed sites) -->
+  <div class="modal-overlay" id="advanced-modal" style="display:none">
+    <div class="modal-box">
+      <button class="modal-close" id="advanced-modal-close">×</button>
+      <h2 class="modal-title">Advanced settings</h2>
+      <div class="modal-body" style="text-align:left">
+        <div id="advanced-settings-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection Setup Modal -->
+  <div class="modal-overlay" id="collection-modal" style="display:none">
+    <div class="modal-box">
+      <button class="modal-close" id="collection-modal-close">×</button>
+      <h2 class="modal-title">Collection setup</h2>
+      <div class="modal-body" style="text-align:left">
+
+        <div class="coll-field" style="background:var(--bg-tertiary); padding:10px 12px; border-radius:6px; border-left:3px solid var(--accent);">
+          <div class="hint" style="font-size:0.8rem; color:var(--text-secondary);">
+            The <strong style="color:var(--accent)">target</strong> (what to collect) is the text in the main input at the bottom of the screen. This modal configures everything else — columns, search strategy, and extraction settings.
+          </div>
+        </div>
+
+        <div class="coll-field">
+          <label for="coll-corpus-filter">Corpus filter <span style="color:var(--text-muted);font-weight:400">optional</span></label>
+          <input id="coll-corpus-filter" type="text" class="form-input"
+            placeholder="e.g. congressional budget justification">
+          <div class="hint">Phrase that must appear in a fetched document to keep it in scope.</div>
+        </div>
+
+        <div class="coll-field">
+          <label for="coll-chunk-anchor">Chunk anchor <span style="color:var(--text-muted);font-weight:400">optional</span></label>
+          <input id="coll-chunk-anchor" type="text" class="form-input" placeholder="e.g. Peter Piper">
+          <div class="hint">Phrase that must appear in the passage sent to the extractor. Use for co-occurrence tasks.</div>
+        </div>
+
+        <div class="coll-divider"></div>
+
+        <div class="coll-field">
+          <label>Table columns <span style="color:var(--accent)">*</span></label>
+          <div class="hint" style="margin-bottom:8px">Define output columns. Body columns are LLM-extracted; the rest auto-fill.</div>
+          <div id="coll-columns" class="coll-columns"></div>
+          <button class="coll-add-col" onclick="addCollColumn()">+ Add column</button>
+        </div>
+
+        <div class="coll-divider"></div>
+
+        <div class="coll-field">
+          <label for="coll-unit">Collection unit</label>
+          <select id="coll-unit" class="form-input">
+            <option value="auto">Auto — infer from target</option>
+            <option value="source">Source — one row per matching URL</option>
+            <option value="passage">Passage — one row per relevant passage</option>
+            <option value="entity">Entity — one row per person/org/place</option>
+            <option value="event">Event — one row per action or dated event</option>
+            <option value="claim">Claim — one row per factual statement</option>
+          </select>
+        </div>
+
+        <div class="coll-field">
+          <label for="coll-strategy">Retrieval strategy</label>
+          <select id="coll-strategy" class="form-input">
+            <option value="auto">Auto — anchor if set, else relevance-ranked</option>
+            <option value="anchor_chunks">Anchor chunks — only passages containing the anchor</option>
+            <option value="top_n_relevant">Top-N relevant — passages ranked by similarity</option>
+            <option value="whole_document">Whole document — every passage (slow)</option>
+          </select>
+        </div>
+
+        <div class="coll-field">
+          <label for="coll-templates">Search query templates <span style="color:var(--text-muted);font-weight:400">optional</span></label>
+          <textarea id="coll-templates" class="form-input" rows="3"
+            placeholder='e.g.&#10;"congressional budget justification" 2026 filetype:pdf&#10;{target} site:gov'></textarea>
+          <div class="hint">One per line. Use <code>{target}</code> and <code>{anchor}</code> as placeholders. If blank, queries are generated.</div>
+        </div>
+
+        <div class="coll-field">
+          <label for="coll-num-queries">Search queries to run</label>
+          <input id="coll-num-queries" type="number" class="form-input" min="1" max="20" value="5">
+        </div>
+
+        <div class="coll-field">
+          <label for="coll-extraction-prompt">Extraction guidance</label>
+          <textarea id="coll-extraction-prompt" class="form-input" rows="3">For each column, extract the most precise value available from the text. Preserve specific dates, names, and figures exactly as stated. Use "unknown" only when the value is genuinely absent from the source.</textarea>
+        </div>
+
+        <div id="coll-error" class="coll-error" style="display:none"></div>
+
+        <button class="coll-start-btn" onclick="startCollectionFromModal()">Save settings</button>
+        <div style="clear:both"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Script -->
+  <script type="module">
+    // ============================================================
+    // DEEP RESEARCH AGENT - Browser-Native AI with FunctionGemma 270M
+    // ============================================================
+
+    import { AutoModelForCausalLM, AutoTokenizer, env, pipeline } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.2.0';
+    import { ToolRegistry } from './tools.js';
+    import { runCollection, rowsToCSV, buildCollectionSummary } from './collection.js';
+
+    // Load models from Hugging Face/CDN. This static browser app does not ship a
+    // local ./models directory, so local lookup causes noisy 404s and can fail.
+    env.allowLocalModels = false;
+    env.allowRemoteModels = true;
+
+    // ============================================================
+    // GLOBAL STATE
+    // ============================================================
+
+    // Extract just the origin from whatever URL format may be stored (handles legacy
+    // values that had /proxy?url= or other paths appended).
+    function workerOrigin(stored) {
+      if (!stored) return '';
+      try {
+        const s = stored.trim();
+        const withProtocol = s.includes('://') ? s : `https://${s}`;
+        return new URL(withProtocol).origin;
+      } catch { return ''; }
+    }
+
+    const state = {
+      model: null,
+      tokenizer: null,
+      tools: new ToolRegistry({
+        // One worker handles both Brave Search (/res/v1/) and webpage proxy (/proxy?url=)
+        braveSearchEndpoint: workerOrigin(localStorage.getItem('deep_research_cf_worker_url')),
+        corsProxyUrl: workerOrigin(localStorage.getItem('deep_research_cf_worker_url'))
+          ? workerOrigin(localStorage.getItem('deep_research_cf_worker_url')) + '/proxy?url='
+          : '',
+      }), // Initialize Registry
+      isLoaded: false,
+      isProcessing: false,
+      conversationHistory: [],
+      sources: [],
+      notes: [],
+      reports: [],
+      currentReport: '',
+      currentQuestion: '',
+      currentIteration: 0,
+      maxIterations: 10,
+      // ---- Collection mode state ----
+      mode: 'report',                  // 'report' | 'collection'
+      collectionConfig: defaultCollectionConfig(),
+      collectionRows: [],              // live rows for the current run
+      collectionStop: false,           // soft-abort flag (not yet user-exposed)
+    };
+
+    function defaultCollectionConfig() {
+      return {
+        target: '',
+        columns: [
+          { name: 'Item',    kind: 'body' },
+          { name: 'Details', kind: 'body' },
+          { name: 'Source',  kind: 'source_url' },
+        ],
+        corpusFilter: '',
+        chunkAnchor: '',
+        retrievalStrategy: 'auto',
+        collectionUnit: 'auto',
+        queryTemplates: [],
+        numQueries: 5,
+        extractionPrompt: '',
+        maxResults: 10,
+      };
+    }
+
+    // Expose state and functions to window for HTML onclick handlers
+    window.state = state;
+
+    // ============================================================
+    // TOOL DEFINITIONS (From Registry)
+    // ============================================================
+    const TOOL_SCHEMA = state.tools.getToolSchema();
+
+    // ============================================================
+    // RESEARCH ANGLES — one specialized researcher per angle.
+    // General-purpose defaults; users can customize via Advanced Settings.
+    // ============================================================
+    const RESEARCH_ANGLES = [
+      {
+        label: 'Overview & Background',
+        queryContext: 'Focus on encyclopedic overviews, background context, definitions, historical context, and foundational explanations of the topic.',
+        notePrompt: 'Extract background information: key definitions, historical context, timeline of events, foundational facts, and scope of the topic. Output specific factual claims only. Never write "I cannot provide".',
+        tag: 'overview',
+      },
+      {
+        label: 'Data & Statistics',
+        queryContext: 'Focus on numerical data, statistics, measurements, quantitative evidence, surveys, and datasets. Prefer government databases, academic sources, and official reports.',
+        notePrompt: 'Extract data points: statistics, percentages, dates, numerical measurements, survey results, trends, and figures from studies or official reports. Include the source of each figure. Never write "I cannot provide".',
+        tag: 'data',
+      },
+      {
+        label: 'Expert Analysis',
+        queryContext: 'Focus on expert opinions, academic research papers, analysis pieces, think-tank reports, and professional assessments from credible sources.',
+        notePrompt: 'Extract expert findings: research conclusions, scholarly findings, professional opinions, key arguments, methodological notes, and evidence-based assessments. Preserve exact names and affiliations. Never write "I cannot provide".',
+        tag: 'analysis',
+      },
+      {
+        label: 'News & Reports',
+        queryContext: 'Focus on recent news coverage, investigative journalism, official reports, press releases, and documented events from established outlets.',
+        notePrompt: 'Extract reported facts: named entities, specific events, dates, direct quotations, documented actions, verified claims, and controversies. Include publication names and dates. Never write "I cannot provide".',
+        tag: 'news',
+      },
+    ];
+
+    // ============================================================
+    // REPORT SECTIONS — one focused writer per section.
+    // General-purpose defaults; users can customize via Advanced Settings.
+    // ============================================================
+    const REPORT_SECTIONS = [
+      {
+        heading: 'Key Findings',
+        tags: ['overview', 'data', 'analysis', 'news', 'gap_evidence'],
+        topN: 6,
+        writerPrompt: 'Write a 2-paragraph executive summary of the most important findings. Lead with the most specific, data-rich finding. Use inline citations [1], [2] etc.',
+      },
+      {
+        heading: 'Background & Context',
+        tags: ['overview'],
+        topN: 5,
+        writerPrompt: 'Write a background section explaining the key context, definitions, historical timeline, and foundational facts needed to understand the topic. Use inline citations [1], [2] etc.',
+      },
+      {
+        heading: 'Evidence & Data',
+        tags: ['data', 'analysis'],
+        topN: 6,
+        writerPrompt: 'Write a section presenting the strongest quantitative evidence, statistics, research findings, and analytical conclusions. Group related data points. Use inline citations [1], [2] etc.',
+      },
+      {
+        heading: 'Reporting & Developments',
+        tags: ['news', 'gap_evidence'],
+        topN: 4,
+        writerPrompt: 'Write a brief section covering recent developments, news coverage, documented events, and notable statements. Preserve dates and named entities. Use inline citations [1], [2] etc.',
+      },
+    ];
+
+    // ============================================================
+    // TOOL IMPLEMENTATIONS (Wrappers)
+    // ============================================================
+
+    // Wrapper to inject current API keys from UI
+    function updateToolConfig() {
+      state.tools.config.braveApiKey = document.getElementById('brave-api-key').value;
+      state.tools.config.allowedSites = getAllowedSearchSites();
+      const workerBase = document.getElementById('cf-worker-url').value.trim().replace(/\/$/, '');
+      if (workerBase) {
+        state.tools.config.braveSearchEndpoint = workerBase;
+        state.tools.config.corsProxyUrl = workerBase + '/proxy?url=';
+      }
+    }
+
+    const TOOLS = {
+      brave_web_search: async (args) => {
+        updateToolConfig();
+        const result = await state.tools.braveWebSearch(args);
+        // Sync sources back to UI state if needed, though Registry has its own state
+        // We'll update global state.sources to match registry for UI compatibility
+        state.sources = state.tools.sources;
+        updateSourcesUI(); // Trigger UI update
+        return result;
+      },
+      fetch_url: async (args) => {
+        const result = await state.tools.fetchUrl(args);
+        return result;
+      },
+      save_note: (args) => {
+        const result = state.tools.saveNote(args);
+        state.notes = state.tools.notes;
+        updateNotesUI();
+        return result;
+      },
+      write_report: (args) => {
+        // Use registry's writeReport but allow existing args
+        const result = state.tools.writeReport(args);
+        return result;
+      },
+      getPastQueries: () => state.tools.getPastQueries(),
+      clearState: () => state.tools.clearState(),
+    };
+
+    // ============================================================
+    // FUNCTION CALL PARSING
+    // ============================================================
+
+    function parseFunctionCall(text) {
+      // 1. Check for clean <tool_call> JSON format
+      let start = text.indexOf("<tool_call>");
+      let end = text.indexOf("</tool_call>");
+      if (start !== -1 && end !== -1) {
+        const inner = text.substring(start + 11, end).trim();
+        try {
+          const parsed = JSON.parse(inner);
+          return { toolName: parsed.tool || parsed.name, args: parsed.args || parsed.arguments || {} };
+        } catch (e) {
+          console.error('JSON parse error:', e, inner);
+        }
+      }
+
+      // 2. Check for the user's observed <|tool_call> format
+      start = text.indexOf("<|tool_call>");
+      end = text.indexOf("<tool_call|>");
+      if (start !== -1 && end !== -1) {
+        let inner = text.substring(start + 12, end).trim();
+        if (inner.startsWith("call:")) inner = inner.substring(5);
+        try {
+          const braceIndex = inner.indexOf("{");
+          if (braceIndex !== -1) {
+            const toolName = inner.slice(0, braceIndex).trim();
+            let argsStr = inner.substring(braceIndex);
+            argsStr = argsStr.replace(/<\|"\|>/g, '"');
+            argsStr = argsStr.replace(/<escape>/g, '"');
+            argsStr = argsStr.replace(/(\w+)\s*:/g, '"$1":');
+            argsStr = argsStr.replace(/'/g, '"');
+            return { toolName, args: JSON.parse(argsStr) };
+          }
+        } catch (e) {
+          console.error('Fallback parse error:', e);
+        }
+      }
+
+      // 3. Original <start_function_call> format
+      start = text.indexOf("<start_function_call>");
+      end = text.indexOf("<end_function_call>");
+      if (start !== -1 && end !== -1) {
+        let inner = text.substring(start + 21, end).trim();
+        if (inner.startsWith("call:")) inner = inner.substring(5);
+        try {
+          const braceIndex = inner.indexOf("{");
+          if (braceIndex !== -1) {
+            const toolName = inner.slice(0, braceIndex).trim();
+            let argsStr = inner.substring(braceIndex);
+            argsStr = argsStr.replace(/<escape>(.*?)<escape>/g, '"$1"');
+            argsStr = argsStr.replace(/(\w+)\s*:/g, '"$1":');
+            argsStr = argsStr.replace(/'/g, '"');
+            return { toolName, args: JSON.parse(argsStr) };
+          }
+        } catch (error) {
+          console.error('Original Parse error:', error, inner);
+        }
+      }
+
+      return null;
+    }
+
+    // ============================================================
+    // MODEL INITIALIZATION
+    // ============================================================
+
+    async function initializeAgent() {
+      const loadBtn = document.getElementById('load-model-btn');
+      const progressBar = document.getElementById('load-progress');
+      const statusText = document.getElementById('load-status');
+      const modelDot = document.getElementById('model-status-dot');
+      const modelText = document.getElementById('model-status-text');
+
+      loadBtn.disabled = true;
+      modelDot.className = 'status-dot loading';
+      modelText.textContent = 'Loading model...';
+
+      try {
+        // Check WebGPU
+        if (!navigator.gpu) {
+          throw new Error('WebGPU not supported. Please use Chrome 113+ or Edge 113+.');
+        }
+        document.getElementById('webgpu-status-dot').className = 'status-dot ready';
+
+        statusText.textContent = 'Loading tokenizer...';
+        progressBar.style.width = '20%';
+
+        const MODEL_ID = "onnx-community/gemma-4-E2B-it-ONNX";
+
+        // Load embedding model
+        const embedDot = document.getElementById('embed-status-dot');
+        const embedText = document.getElementById('embed-status-text');
+
+        embedDot.className = 'status-dot loading';
+        embedText.innerText = 'Loading...';
+
+        try {
+          // Feature extraction pipeline
+          const embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+            device: 'webgpu',
+          });
+          await state.tools.initEmbeddings(embedder);
+          embedDot.className = 'status-dot ready';
+          embedText.innerText = 'Embeddings Ready';
+        } catch (e) {
+          console.warn('Embedding model failed:', e);
+          embedDot.className = 'status-dot error';
+          embedText.innerText = 'Embeddings Failed';
+        }
+
+        // Load tokenizer
+        state.tokenizer = await AutoTokenizer.from_pretrained(MODEL_ID, {
+          progress_callback: (progress) => {
+            if (progress.status === 'progress') {
+              const pct = 20 + (progress.progress * 0.3);
+              progressBar.style.width = `${pct}%`;
+            }
+          }
+        });
+
+        statusText.textContent = 'Loading model (this may take a moment)...';
+        progressBar.style.width = '50%';
+
+        // Load model with WebGPU
+        state.model = await AutoModelForCausalLM.from_pretrained(MODEL_ID, {
+          dtype: 'q4f16',
+          device: "webgpu",
+          progress_callback: (progress) => {
+            if (progress.status === 'progress') {
+              const pct = 50 + (progress.progress * 0.5);
+              progressBar.style.width = `${pct}%`;
+              statusText.textContent = `Loading model: ${Math.round(progress.progress * 100)}%`;
+            }
+          }
+        });
+
+        progressBar.style.width = '100%';
+        statusText.textContent = 'Model loaded successfully!';
+        modelDot.className = 'status-dot ready';
+        modelText.textContent = 'Gemma 4 E2B';
+
+        state.isLoaded = true;
+        document.getElementById('send-btn').disabled = false;
+        loadBtn.textContent = 'Model Loaded ✓';
+        loadBtn.style.background = 'var(--accent-green)';
+
+        // Clear empty state
+        const chatContainer = document.getElementById('chat-container');
+        chatContainer.innerHTML = '';
+        addSystemMessage("Perry is ready. Ask me a research question!");
+
+      } catch (error) {
+        console.error('Model loading error:', error);
+        modelDot.className = 'status-dot error';
+        modelText.textContent = 'Load failed';
+        statusText.textContent = `Error: ${error.message}`;
+        loadBtn.disabled = false;
+        loadBtn.textContent = 'Retry Load';
+      }
+    }
+
+    // Expose to window
+    window.initializeAgent = initializeAgent;
+
+    // ============================================================
+    // AGENT LOOP — Two-Agent: Researcher + Writer
+    // ============================================================
+
+    async function runAgentLoop(userQuery) {
+      if (!state.isLoaded || state.isProcessing) return;
+
+      state.isProcessing = true;
+      state.currentIteration = 0;
+      state.maxIterations = parseInt(document.getElementById('max-iterations').value) || 10;
+
+      const sendBtn = document.getElementById('send-btn');
+      sendBtn.disabled = true;
+
+      addUserMessage(userQuery);
+
+      TOOLS.clearState();
+      state.conversationHistory = [];
+      state.notes = [];
+      state.sources = [];
+      updateSourcesUI();
+      updateNotesUI();
+
+      const allowedSites = getAllowedSearchSites();
+      if (allowedSites.length) {
+        addSystemMessage(`Restricting web search to: ${allowedSites.join(', ')}`);
+      }
+
+      try {
+        // Phase 0: Generate research plan and wait for user approval.
+        // Mirrors perry-v2's plan-gated pipeline (planner.rs + AwaitingPlan state).
+        const plan = await generateResearchPlan(userQuery);
+
+        // Phase 1: Run each angle-specialized researcher sequentially
+        const activeAngles = getResearchAngles();
+        const searchesPerAngle = Math.max(1, Math.floor(state.maxIterations / activeAngles.length));
+        for (const angle of activeAngles) {
+          addPhaseMessage(`🔍 ${angle.label}`, `Researching ${angle.label.toLowerCase()}…`);
+          await runResearcherLoop(userQuery, angle.numQueries || searchesPerAngle, angle, plan);
+        }
+
+        let usableNotes = getUsableNotes();
+        addSystemMessage(`📊 ${usableNotes.length}/${state.notes.length} notes passed evidence quality checks.`);
+
+        if (usableNotes.length === 0) {
+          addSystemMessage('No usable notes collected. Try a more specific query.');
+          return;
+        }
+
+        let finalReport = await writeReportFromNotes(userQuery, usableNotes);
+        const maxStreamline = Math.max(1, Math.min(4, parseInt(document.getElementById('streamline-iterations').value) || 1));
+
+        // Track the hash of the last report so we can detect when gap-fill stops
+        // producing new information (convergence), mirroring perry-v2 streamlining.
+        let previousReportHash = null;
+
+        for (let iteration = 2; iteration <= maxStreamline; iteration++) {
+          const check = await checkCompleteness(userQuery, finalReport);
+          if (check.answered) {
+            addSystemMessage('✓ Streamlining: report answers the question.');
+            break;
+          }
+          if (!check.gap) break;
+
+          // Convergence check: exit if the last rewrite changed nothing.
+          const currentHash = simpleHash(finalReport);
+          if (previousReportHash !== null && previousReportHash === currentHash) {
+            addSystemMessage('✓ Streamlining: report converged — no new information added.');
+            break;
+          }
+          previousReportHash = currentHash;
+
+          addPhaseMessage('↻ Gap fill', check.gap);
+          const gapAngle = {
+            label: `Gap Agent ${iteration - 1}`,
+            queryContext: `Find missing evidence for this gap: ${check.gap}`,
+            notePrompt: `Extract evidence that fills this report gap: ${check.gap}. Preserve names, dates, figures, mechanisms, caveats, and short exact quotes.`,
+            tag: 'gap_evidence',
+            extractionDepth: 'quick',
+            numQueries: 2,
+          };
+          await runResearcherLoop(userQuery, gapAngle.numQueries, gapAngle, plan);
+          usableNotes = getUsableNotes();
+          finalReport = await writeReportFromNotes(userQuery, usableNotes);
+        }
+
+        if (document.getElementById('fact-check-enabled').value === 'yes') {
+          finalReport = await runFactCheck(userQuery, finalReport, usableNotes);
+        }
+
+        state.currentReport = finalReport;
+        state.currentQuestion = userQuery;
+        addAssistantMessage(finalReport, true);
+        saveCurrentReport(userQuery, finalReport, 'main');
+
+      } catch (error) {
+        console.error('Agent error:', error);
+        addSystemMessage(`Error: ${error.message}`);
+      }
+
+      state.isProcessing = false;
+      sendBtn.disabled = false;
+    }
+
+    // ============================================================
+    // GENERATE TEXT HELPER
+    // Single-call plain-text generation. No tool syntax needed.
+    // The model just outputs natural language; JS does all the tool calls.
+    // ============================================================
+    async function generateText(systemPrompt, userMessage, maxNewTokens = 128) {
+      const messages = [
+        { role: 'developer', content: systemPrompt },
+        { role: 'user', content: userMessage },
+      ];
+      const prompt = generatePrompt(messages, []);
+      const inputs = state.tokenizer(prompt, { add_special_tokens: false, padding: false, truncation: true, max_length: 1024 });
+      console.debug('[generateText] Input tokens:', inputs.input_ids?.dims?.[1] ?? '?');
+
+      const temperature = parseFloat(document.getElementById('temperature').value) || 0;
+      const output = await state.model.generate({ ...inputs, max_new_tokens: maxNewTokens, do_sample: temperature > 0, temperature });
+      const decoded = state.tokenizer.decode(output[0], { skip_special_tokens: false });
+
+      if (inputs.input_ids) inputs.input_ids.dispose();
+      if (inputs.attention_mask) inputs.attention_mask.dispose();
+      console.debug('[generateText] Raw output (last 300):', decoded.slice(-300));
+
+      const marker = '<start_of_turn>model';
+      const markerIdx = decoded.lastIndexOf(marker);
+      if (markerIdx === -1) { console.error('[generateText] Marker not found:', decoded); return ''; }
+
+      return decoded.substring(markerIdx + marker.length)
+        .replace(/<end_of_turn>.*$/s, '').replace(/<eos>/g, '').trim();
+    }
+
+    function parseStructuredNote(raw) {
+      const cleaned = raw.replace(/<turn\|>/g, '').replace(/<[^>]{1,30}>/g, '').trim();
+      if (!cleaned || /^NO_RELEVANT_FACTS$/i.test(cleaned) || /NO_RELEVANT_CONTENT/i.test(cleaned)) return null;
+      if (/cannot provide|no information|does not contain|no specific|no factual/i.test(cleaned)) return null;
+
+      const roleMatch = cleaned.match(/^Role:\s*(.+)$/im);
+      const relevanceMatch = cleaned.match(/^Relevance:\s*(.+)$/im);
+      const contentMatch = cleaned.match(/^Content:\s*([\s\S]*)$/im);
+      const allowedRoles = new Set(['data', 'evidence', 'context', 'counterpoint', 'methodology', 'argument']);
+      const role = roleMatch ? roleMatch[1].trim().toLowerCase().replace(/[^a-z_ -]/g, '').split(/\s+/)[0] : 'context';
+      const normalizedRole = allowedRoles.has(role) ? role : 'context';
+      let content = contentMatch ? contentMatch[1].trim() : cleaned
+        .split('\n')
+        .filter(line => /^\s*[-*•]\s+/.test(line))
+        .join('\n')
+        .trim();
+
+      if (!content) content = cleaned;
+      content = content
+        .replace(/^Role:.*$/gim, '')
+        .replace(/^Relevance:.*$/gim, '')
+        .replace(/^Content:\s*/gim, '')
+        .trim();
+
+      return {
+        role: normalizedRole,
+        relevance: relevanceMatch ? relevanceMatch[1].trim() : '',
+        content,
+      };
+    }
+
+    function getUsableNotes() {
+      const uselessPattern = /NO_RELEVANT_FACTS|cannot provide|based on the provided text|no information regarding|does not contain|no specific|no factual/i;
+      return state.notes.filter(note => !uselessPattern.test(note.content) && !state.tools.noteQualityIssue(note.content));
+    }
+
+    function getMaxContextNotes() {
+      return Math.max(1, Math.min(40, parseInt(document.getElementById('max-context-notes').value) || 12));
+    }
+
+    function getDepthParams(depth = 'standard') {
+      if (depth === 'quick') return { chunks: 3, noteTokens: 320 };
+      if (depth === 'deep') return { chunks: 8, noteTokens: 420 };
+      return { chunks: 5, noteTokens: 360 };
+    }
+
+    async function writeReportFromNotes(userQuery, usableNotes) {
+      const sourceIndex = buildSourceIndex(usableNotes);
+      addPhaseMessage('✍️ Writers', 'Writing report sections from ranked notes…');
+      const writtenSections = [];
+      const priorSummaries = [];
+
+      for (const section of getReportSections()) {
+        const relevantNotes = await selectNotesForSection(section, usableNotes, userQuery);
+
+        if (relevantNotes.length === 0) {
+          addSystemMessage(`Skipping "${section.heading}" — no notes met the relevance threshold.`);
+          continue;
+        }
+
+        addSystemMessage(`Writing: ${section.heading} (${relevantNotes.length} notes)…`);
+        const thinkingEl = addThinkingIndicator();
+        const content = await runSectionWriter(section, relevantNotes, priorSummaries, sourceIndex);
+        thinkingEl.remove();
+
+        if (content) {
+          writtenSections.push({ heading: section.heading, content, notes: relevantNotes });
+          priorSummaries.push(`${section.heading}: ${content.slice(0, 200)}`);
+        }
+      }
+
+      if (writtenSections.length === 0) {
+        return '# Research Report\n\nNo report sections could be written from the current notes.';
+      }
+
+      return stitchReport(userQuery, writtenSections, sourceIndex);
+    }
+
+    async function selectNotesForSection(section, notes, userQuery) {
+      const maxNotes = Math.min(section.topN || getMaxContextNotes(), getMaxContextNotes());
+      const tagFiltered = notes.filter(n => section.tags.includes(n.angleTag) || section.tags.includes(n.role) || n.angleTag === 'gap_evidence');
+      const pool = tagFiltered.length ? tagFiltered : notes;
+      const threshold = Number.isFinite(section.relevanceThreshold) ? section.relevanceThreshold : 0.2;
+
+      if (!state.tools.embedder) return pool.slice(0, maxNotes);
+
+      const target = `${userQuery}\n${section.heading}\n${section.writerPrompt}`;
+      const targetVec = await state.tools.embedText(target);
+      const scored = [];
+      for (const note of pool) {
+        const noteVec = await state.tools.embedText(`${note.title}\n${note.relevance || ''}\n${note.content}`);
+        scored.push({ note, score: state.tools._cosineSimilarity(targetVec, noteVec) });
+      }
+      scored.sort((a, b) => b.score - a.score);
+      const selected = scored.filter(item => item.score >= threshold).slice(0, maxNotes).map(item => item.note);
+      return selected.length ? selected : scored.slice(0, Math.min(3, maxNotes)).map(item => item.note);
+    }
+
+    async function checkCompleteness(userQuery, reportText) {
+      const thinkingEl = addThinkingIndicator();
+      const raw = await generateText(
+        `You evaluate whether a research report answers the user's research question. Reply exactly in two lines:
+Line 1: YES or NO
+Line 2: If NO, one sentence naming the most important missing evidence. If YES, write complete.`,
+        `Research question: ${userQuery}\n\nReport:\n${reportText.slice(0, 12000)}\n\nEvaluation:`,
+        120
+      );
+      thinkingEl.remove();
+      const lines = raw.split('\n').map(line => line.trim()).filter(Boolean);
+      return {
+        answered: /^YES\b/i.test(lines[0] || ''),
+        gap: /^NO\b/i.test(lines[0] || '') ? (lines[1] || '') : '',
+      };
+    }
+
+    async function runFactCheck(userQuery, reportText, notes) {
+      addPhaseMessage('✓ Fact check', 'Checking claims against extracted notes…');
+      const notesBlock = notes.slice(0, getMaxContextNotes()).map((n, i) =>
+        `n${i + 1} (${n.role || 'context'}) ${n.title}\nSource: ${n.source_url}\n${n.content}`
+      ).join('\n\n');
+      const thinkingEl = addThinkingIndicator();
+      const raw = await generateText(
+        `You are a source-grounding reviewer. Use only the notes provided. Identify unsupported names, dates, amounts, chronology errors, or citation problems. If no material issues are found, reply exactly: NO_MATERIAL_ISSUES. Keep findings concise.`,
+        `Research question: ${userQuery}\n\nReport:\n${reportText.slice(0, 9000)}\n\nNotes:\n${notesBlock}\n\nFact-check findings:`,
+        260
+      );
+      thinkingEl.remove();
+      const findings = raw.replace(/<[^>]{1,30}>/g, '').trim();
+      if (!findings || /^NO_MATERIAL_ISSUES$/i.test(findings)) return reportText;
+      return `${reportText}\n\n## Fact-check Notes\n\n${findings}\n`;
+    }
+
+    // ============================================================
+    // RESEARCH PLAN — mirrors perry-v2 planner.rs
+    // Generates sub-questions + outline before research begins.
+    // Shows a plan card and waits for the user to approve before
+    // the search loops start (plan-gated pipeline).
+    // ============================================================
+
+    async function generateResearchPlan(userQuery) {
+      addPhaseMessage('📋 Research Plan', 'Generating research plan…');
+      const thinkingEl = addThinkingIndicator();
+
+      const raw = await generateText(
+        `Decompose a research question into 3 focused sub-questions and 3 report sections.
+Output exactly this format with no extra text:
+SUB-QUESTIONS:
+- [specific aspect 1]
+- [specific aspect 2]
+- [specific aspect 3]
+SECTIONS:
+- [section title 1]
+- [section title 2]
+- [section title 3]`,
+        `Research question: "${userQuery}"`,
+        220
+      );
+      thinkingEl.remove();
+
+      const plan = parsePlan(raw);
+      if (!plan.subQuestions.length) {
+        addSystemMessage('⚠️ Plan generation returned no sub-questions — proceeding without plan.');
+        return null;
+      }
+
+      return await showPlanAndWait(plan);
+    }
+
+    function parsePlan(raw) {
+      const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+      const subQuestions = [];
+      const sections = [];
+      let mode = null;
+
+      for (const line of lines) {
+        if (/sub.?question/i.test(line) || /^questions?:?$/i.test(line)) { mode = 'sq'; continue; }
+        if (/^sections?:?$/i.test(line) || /^report sections?/i.test(line) || /^outline/i.test(line)) { mode = 'sec'; continue; }
+        if (/^[-*•]|\d+[.)]\s/.test(line) && mode) {
+          const text = line.replace(/^[-*•\d.)\s]+/, '').replace(/^\[|\]$/g, '').trim();
+          if (text.length > 5 && !/^\[/.test(text)) {
+            if (mode === 'sq') subQuestions.push(text);
+            else if (mode === 'sec') sections.push(text);
+          }
+        }
+      }
+
+      return { subQuestions: subQuestions.slice(0, 5), sections: sections.slice(0, 5) };
+    }
+
+    // Show the plan in the chat and return a Promise that resolves when the user clicks Continue.
+    function showPlanAndWait(plan) {
+      return new Promise(resolve => {
+        const container = document.getElementById('chat-container');
+        const div = document.createElement('div');
+        div.className = 'message message-assistant';
+
+        const sqHtml = plan.subQuestions.map(q => `<li>${escapeHtml(q)}</li>`).join('');
+        const secHtml = plan.sections.length
+          ? `<div style="margin-top:8px"><span class="plan-label">Report outline:</span><ul class="plan-list">${plan.sections.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul></div>`
+          : '';
+
+        div.innerHTML = `<div class="message-content">
+          <div class="plan-box">
+            <div class="plan-header">Research Plan</div>
+            <span class="plan-label">Sub-questions to investigate:</span>
+            <ul class="plan-list">${sqHtml}</ul>
+            ${secHtml}
+            <button class="plan-continue-btn" id="plan-continue-btn">Continue research →</button>
+          </div>
+        </div>`;
+
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+
+        document.getElementById('plan-continue-btn').onclick = () => {
+          const btn = document.getElementById('plan-continue-btn');
+          btn.disabled = true;
+          btn.textContent = '✓ Research in progress…';
+          resolve(plan);
+        };
+      });
+    }
+
+    // ============================================================
+    // SEARCH TRIAGE — mirrors perry-v2 search_triage.rs
+    // Filters search results before fetching using:
+    //   1. Heuristic filter for obvious junk URLs
+    //   2. Embedding relevance pre-filter (when embedder is loaded)
+    // Keeps the top-N most relevant candidates, saving fetch quota.
+    // ============================================================
+
+    async function triageSearchResults(items, userQuery) {
+      if (!items.length) return [];
+
+      // Heuristic: skip obvious noise (login walls, ads, tracking pages).
+      const heuristicPassed = items.filter(item => {
+        const url = (item.link || '').toLowerCase();
+        const junk = ['/login', '/signin', '/register', '/subscribe', '/captcha',
+                      '/cart', '/checkout', 'google.com/aclk', '/ads/', 'doubleclick.net',
+                      'accounts.google.com', '/account/', 'facebook.com/login'];
+        return !junk.some(p => url.includes(p));
+      });
+
+      if (!state.tools.embedder) return heuristicPassed;
+
+      // Embedding pre-filter: score each result's title+snippet against the query.
+      const queryEmb = await state.tools.embedText(userQuery);
+      const scored = [];
+
+      for (const item of heuristicPassed) {
+        const text = `${item.title}. ${item.snippet || ''}`.slice(0, 400);
+        const emb = await state.tools.embedText(text);
+        scored.push({ item, score: state.tools._cosineSimilarity(queryEmb, emb) });
+      }
+
+      scored.sort((a, b) => b.score - a.score);
+
+      // Keep results above the threshold; always keep at least 3 to avoid empty runs.
+      const threshold = 0.15;
+      const eligible = scored.filter(x => x.score >= threshold);
+      const final = (eligible.length >= 3 ? eligible : scored.slice(0, 3)).slice(0, 8);
+
+      addSystemMessage(`📊 Triage: ${final.length}/${items.length} sources passed (top score: ${(final[0]?.score ?? 0).toFixed(2)}).`);
+      return final.map(x => x.item);
+    }
+
+    // Simple hash for convergence detection in the gap-fill loop.
+    function simpleHash(str) {
+      let h = 0;
+      const s = str.slice(0, 3000);
+      for (let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; }
+      return h;
+    }
+
+    // ------ Researcher (angle-specialized) ------
+    async function runResearcherLoop(userQuery, maxIterations, angle, planContext = null) {
+      const depth = getDepthParams(angle.extractionDepth);
+
+      // Include plan sub-questions in the query-planning prompt so queries
+      // are distributed across the aspects identified during planning.
+      const planNote = planContext?.subQuestions?.length
+        ? `\nFocus on these research aspects: ${planContext.subQuestions.slice(0, 3).join('; ')}.`
+        : '';
+
+      const planThinkingEl = addThinkingIndicator();
+      const planRaw = await generateText(
+        `You are a research planner specializing in ${angle.label}. ${angle.queryContext}${planNote} Output ${Math.min(maxIterations, 4)} specific search queries for the topic below. Output only plain search terms — do NOT include site:, filetype:, or other operators. One query per line, no numbering, no punctuation at end.`,
+        `Topic: "${userQuery}"\nSearch queries:`,
+        160
+      );
+      planThinkingEl.remove();
+
+      const plannedQueries = planRaw.split('\n')
+        .map(q => q.trim()
+          // Strip known Brave operator syntax that the LLM sometimes emits.
+          // Only target operator-prefixed tokens (site:, filetype:, -site:, etc.),
+          // not bare hyphens in words like "COVID-19".
+          .replace(/\b(?:[-]?site|[-]?filetype|inurl|intitle|inanchor):\S*/gi, '')
+          .replace(/\bOR\b|\bAND\b/g, '')
+          .replace(/^["'\d.)\-]+|["']$/g, '')
+          .trim())
+        .filter(q => q.length > 4)
+        .slice(0, maxIterations);
+      addSystemMessage(`📋 ${angle.label} queries: ${plannedQueries.join(' · ')}`);
+
+      for (let i = 0; i < maxIterations; i++) {
+        state.currentIteration++;
+        const pastQueries = TOOLS.getPastQueries();
+
+        let query;
+        if (i < plannedQueries.length && !pastQueries.includes(plannedQueries[i])) {
+          query = plannedQueries[i];
+        } else {
+          const pastQueriesNote = pastQueries.length ? `\nAlready covered: ${pastQueries.join(' | ')}` : '';
+          const queryThinkingEl = addThinkingIndicator();
+          const rawQuery = await generateText(
+            `You generate web search queries. ${angle.queryContext} Output ONE search query not yet covered. Plain keywords only — no site:, filetype:, or operators. No punctuation at end. Nothing else.`,
+            `Topic: "${userQuery}"${pastQueriesNote}\nSearch query:`,
+            32
+          );
+          queryThinkingEl.remove();
+          query = rawQuery.split('\n')[0].trim()
+            .replace(/site:\S+|filetype:\S+|-\S+|\bOR\b|\bAND\b/g, '')
+            .replace(/^["']|["']$/g, '')
+            .trim();
+        }
+
+        if (!query) continue;
+
+        addToolCallMessage('brave_web_search', { query });
+        const searchResult = await TOOLS.brave_web_search({ query });
+        addToolResultMessage('brave_web_search', searchResult);
+
+        if (searchResult.error || !searchResult.items?.length) continue;
+
+        // Triage: filter results by relevance before fetching.
+        // Saves fetch quota and skips junk/off-topic pages.
+        const triaged = await triageSearchResults(searchResult.items, userQuery);
+        if (!triaged.length) {
+          addSystemMessage(`⚠️ No results passed triage for: "${query}"`);
+          continue;
+        }
+
+        for (const resultItem of triaged) {
+          addSystemMessage(`📄 Reading: ${resultItem.link}`);
+          const fetchRes = await TOOLS.fetch_url({ url: resultItem.link });
+          if (fetchRes.skipped) continue;
+
+          let contextText = '';
+          if (fetchRes.content && fetchRes.content.length > 200) {
+            const { chunks } = state.tools.chunkText({ text: fetchRes.content, chunk_size: 800, overlap: 100 });
+
+            if (state.tools.embedder && chunks.length > 0) {
+              const queryEmb = await state.tools.embedText(userQuery);
+              const scoredChunks = [];
+              for (const c of chunks) {
+                const cEmb = await state.tools.embedText(c.text);
+                scoredChunks.push({ text: c.text, score: state.tools._cosineSimilarity(queryEmb, cEmb) });
+              }
+              scoredChunks.sort((a, b) => b.score - a.score);
+              if (scoredChunks[0].score < 0.25) {
+                addSystemMessage(`⚠️ Off-topic at ${new URL(resultItem.link).hostname} — skipping.`);
+                continue;
+              }
+              contextText = scoredChunks.slice(0, depth.chunks).map(c => c.text).join('\n\n');
+            } else {
+              contextText = chunks[0]?.text || fetchRes.content.slice(0, 1000);
+            }
+          } else {
+            addSystemMessage(`⚠️ Could not read ${new URL(resultItem.link).hostname} — skipping.`);
+            continue;
+          }
+
+          if (!contextText || contextText.length < 50) continue;
+
+          const noteThinkingEl = addThinkingIndicator();
+          const extractionPrompt = `${angle.notePrompt}
+
+Hard evidence rules:
+- Use only the Source text. Do not use prior knowledge.
+- If the Source text does not explicitly contain relevant facts for the Topic, output exactly: NO_RELEVANT_FACTS
+- Use exactly this structure when relevant:
+Role: <one of data, evidence, context, counterpoint, methodology, argument>
+Relevance: <one sentence explaining why this matters>
+Content:
+- <specific claim, statistic, date, mechanism, causal link, or short exact quote>
+- <...>
+- Use 2-6 bullets.
+- Every bullet should include an exact supporting quote in double quotes when the source wording is available.
+- Do not infer missing names, dates, dollar amounts, contract numbers, roles, or relationships.`;
+
+          const rawNote = await generateText(
+            extractionPrompt,
+            `Topic: "${userQuery}"\nSource text:\n${contextText}\nFacts extracted:`,
+            depth.noteTokens
+          );
+          noteThinkingEl.remove();
+
+          const structuredNote = parseStructuredNote(rawNote);
+          if (!structuredNote) continue;
+          const issue = state.tools.noteQualityIssue(structuredNote.content);
+          if (issue) {
+            addSystemMessage(`⚠️ ${issue} at ${new URL(resultItem.link).hostname} — skipping note.`);
+            continue;
+          }
+
+          const noteTitle = `Finding ${state.notes.length + 1}: ${resultItem.title.slice(0, 50)}`;
+          const noteResult = TOOLS.save_note({
+            title: noteTitle,
+            content: structuredNote.content,
+            source_url: resultItem.link,
+            source_title: resultItem.title,
+            tags: [angle.tag, structuredNote.role],
+            role: structuredNote.role,
+            relevance: structuredNote.relevance,
+            angleTag: angle.tag,
+          });
+
+          // Tag note with its researcher angle for section routing
+          noteResult.note.angleTag = angle.tag;
+          const savedNote = state.notes.find(n => n.id === noteResult.note.id);
+          if (savedNote) {
+            savedNote.angleTag = angle.tag;
+            savedNote.role = structuredNote.role;
+            savedNote.relevance = structuredNote.relevance;
+          }
+
+          if (state.tools.embedder) {
+            await state.tools.storeVector({
+              id: noteResult.note.id,
+              text: structuredNote.content,
+              metadata: { title: noteTitle, url: resultItem.link, angleTag: angle.tag, role: structuredNote.role }
+            });
+          }
+
+          addToolResultMessage('save_note', noteResult);
+          await new Promise(r => setTimeout(r, 100));
+        }
+      }
+
+      const angleNotes = state.notes.filter(n => n.angleTag === angle.tag).length;
+      addSystemMessage(`✅ ${angle.label}: ${angleNotes} notes collected.`);
+    }
+
+    // ------ Section writer (one per report section) ------
+    async function runSectionWriter(section, relevantNotes, priorSummaries, sourceIndex) {
+      const notesSummary = relevantNotes
+        .map((n) => {
+          const citation = sourceIndex.get(n.source_url)?.index;
+          return `Note token: ${n.id}
+Role: ${n.role || 'context'}
+Relevance: ${n.relevance || 'Relevant to the section.'}
+Citation source: [${citation}]
+Title: ${n.title}
+Source: ${n.source_url}
+Evidence notes:
+${n.content}`;
+        })
+        .join('\n\n');
+
+      const priorContext = priorSummaries.length > 0
+        ? `\n\nAlready covered in earlier sections — do not repeat:\n${priorSummaries.join('\n')}`
+        : '';
+
+      const raw = await generateText(
+        `You write one section of a research report. ${section.writerPrompt}
+
+Grounding rules:
+- Use only the Research notes provided in the user message.
+- Every factual sentence must end with one or more source citations from the provided bracketed source IDs, such as [1].
+- Do not invent citations or cite a source ID that was not provided.
+- Do not add names, dates, amounts, contract numbers, roles, or relationships unless they appear in the notes.
+- If the notes do not support a requested detail, omit that detail.
+- Write only the section body, with no heading and no sources list.`,
+        `Research notes:\n${notesSummary}${priorContext}\n\nSection body:`,
+        500
+      );
+
+      return enforceKnownCitations(
+        raw.replace(/<turn\|>/g, '').replace(/<[^>]{1,30}>/g, '').trim(),
+        sourceIndex
+      );
+    }
+
+    function buildSourceIndex(notes) {
+      const uniqueSources = new Map();
+      let refIdx = 1;
+      for (const note of notes) {
+        if (!uniqueSources.has(note.source_url)) {
+          uniqueSources.set(note.source_url, { index: refIdx++, title: note.source_title || note.title, url: note.source_url });
+        }
+      }
+      return uniqueSources;
+    }
+
+    function enforceKnownCitations(text, sourceIndex) {
+      const validIds = new Set([...sourceIndex.values()].map(src => String(src.index)));
+      return text
+        .replace(/\[(\d+(?:\s*,\s*\d+)*)\]/g, (match, ids) => {
+          const kept = ids.split(',').map(id => id.trim()).filter(id => validIds.has(id));
+          return kept.length ? `[${kept.join(', ')}]` : '';
+        })
+        .replace(/[ \t]+\n/g, '\n')
+        .trim();
+    }
+
+    // ------ Stitcher — assembles section outputs into a final report ------
+    function stitchReport(userQuery, sections, sourceIndex) {
+      let report = `# Research Report\n*${userQuery}*\n\n`;
+      for (const s of sections) {
+        if (s.content) report += `## ${s.heading}\n\n${s.content}\n\n`;
+      }
+
+      if (sourceIndex.size > 0) {
+        report += `## Sources\n\n`;
+        for (const [, src] of sourceIndex) {
+          report += `[${src.index}] [${src.title}](${src.url})\n`;
+        }
+      }
+
+      return report;
+    }
+
+
+    // ============================================================
+    // PROMPT CONSTRUCTION (Manual)
+    // ============================================================
+
+    function formatToolDeclaration(tool) {
+      const func = tool.function;
+      return JSON.stringify({
+        name: func.name,
+        description: func.description,
+        parameters: func.parameters
+      }, null, 2);
+    }
+
+    function generatePrompt(messages, tools) {
+      let prompt = '<bos>';
+
+      // Developer/System Turn
+      const devMsg = messages.find(m => m.role === 'developer' || m.role === 'system');
+      if (devMsg) {
+        prompt += `<start_of_turn>developer\n${devMsg.content}\n`;
+
+        // Add tool definitions
+        if (tools && tools.length > 0) {
+          prompt += `\nAvailable Tools:\n`;
+          for (const tool of tools) {
+            prompt += `${formatToolDeclaration(tool)}\n`;
+          }
+        }
+        prompt += `<end_of_turn>\n`;
+      }
+
+      // History
+      for (const msg of messages) {
+        if (msg.role === 'user') {
+          prompt += `<start_of_turn>user\n${msg.content}<end_of_turn>\n`;
+        } else if (msg.role === 'model' || msg.role === 'assistant') {
+          prompt += `<start_of_turn>model\n${msg.content}<end_of_turn>\n`;
+        } else if (msg.role === 'tool') {
+          // FunctionGemma tool response format
+          // It's usually a user turn or a special block?
+          // The template suggests <start_function_response>
+          prompt += `<start_function_response>response:${msg.name}{${msg.content}}<end_function_response>\n`;
+        }
+      }
+
+      // Generation prompt
+      prompt += `<start_of_turn>model\n`;
+      return prompt;
+    }
+
+    // ============================================================
+    // UI HELPERS
+    // ============================================================
+
+    function addUserMessage(text) {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-user';
+      div.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addAssistantMessage(text, isMarkdown = false) {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-assistant';
+
+      if (isMarkdown) {
+        div.innerHTML = `<div class="message-content markdown-content">${renderMarkdown(text)}</div>`;
+      } else {
+        div.innerHTML = `<div class="message-content">${escapeHtml(text)}</div>`;
+      }
+
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addSystemMessage(text) {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-assistant';
+      div.innerHTML = `<div class="message-content" style="color: var(--text-muted); font-style: italic;">${escapeHtml(text)}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addToolCallMessage(toolName, args) {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-assistant';
+      div.innerHTML = `
+        <div class="message-tool-call">
+          <div class="tool-label">🔧 Calling: ${toolName}</div>
+          <pre>${JSON.stringify(args, null, 2)}</pre>
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addToolResultMessage(toolName, result) {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-assistant';
+
+      let summary = '';
+      if (toolName === 'brave_web_search') {
+        if (result.error) {
+          summary = `Error: ${result.error}`;
+        } else {
+          summary = `Found ${result.items?.length || 0} results for "${result.query}"`;
+        }
+      } else if (toolName === 'fetch_url') {
+        summary = result.error ? `Error: ${result.error}` : `Fetched ${result.charCount} characters from ${result.url}`;
+      } else if (toolName === 'save_note') {
+        summary = `Saved note: "${result.note_id ? 'Success' : 'Failed'}"`;
+      } else {
+        summary = JSON.stringify(result).slice(0, 200) + '...';
+      }
+
+      div.innerHTML = `
+        <div class="message-tool-result">
+          <div class="result-label">✓ Result: ${toolName}</div>
+          <div class="result-summary">${escapeHtml(summary)}</div>
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function addThinkingIndicator() {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-assistant';
+      div.id = 'thinking-' + Date.now();
+      div.innerHTML = `
+        <div class="thinking-indicator">
+          <div class="thinking-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span>Agent thinking... (iteration ${state.currentIteration}/${state.maxIterations})</span>
+        </div>
+      `;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+      return div;
+    }
+
+    function addPhaseMessage(phase, description) {
+      const container = document.getElementById('chat-container');
+      const div = document.createElement('div');
+      div.className = 'message message-assistant';
+      div.innerHTML = `<div class="message-content" style="color:var(--accent-purple);font-family:var(--font-mono);font-size:0.82rem;border-left:3px solid var(--accent-purple);padding-left:12px;"><strong>${phase}</strong> — ${escapeHtml(description)}</div>`;
+      container.appendChild(div);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function updateSourcesUI() {
+      const list = document.getElementById('sources-list');
+      const count = document.getElementById('sources-count');
+      const btn = document.getElementById('export-sources-btn');
+      count.textContent = state.sources.length;
+
+      if (state.sources.length === 0) {
+        if (btn) btn.style.display = 'none';
+        return;
+      }
+
+      if (btn) btn.style.display = 'block';
+
+      list.innerHTML = state.sources.map(source => `
+        <div class="source-card" onclick="window.open('${source.link}', '_blank')">
+          <div class="source-title">${escapeHtml(source.title)}</div>
+          <div class="source-url">${source.displayLink}</div>
+          ${source.snippet ? `<div class="source-snippet">${escapeHtml(source.snippet)}</div>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function updateNotesUI() {
+      const notesEl = document.getElementById('research-notes');
+      const count = document.getElementById('notes-count');
+      const btn = document.getElementById('export-notes-btn');
+      count.textContent = state.notes.length;
+
+      if (state.notes.length === 0) {
+        if (btn) btn.style.display = 'none';
+        return;
+      }
+
+      if (btn) btn.style.display = 'block';
+
+      notesEl.innerHTML = state.notes.map(note => `
+        <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-subtle);">
+          <strong style="color: var(--text-primary);">${escapeHtml(note.title)}</strong>
+          <div class="note-meta">
+            <span class="role-pill">${escapeHtml(note.role || 'context')}</span>
+            ${note.relevance ? escapeHtml(note.relevance) : ''}
+          </div>
+          <p style="margin-top: 4px;">${escapeHtml(note.content)}</p>
+          ${note.source_url ? `<a href="${note.source_url}" target="_blank" style="font-size: 0.75rem; color: var(--accent-blue);">Source</a>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function updateReportsUI() {
+      const list = document.getElementById('reports-list');
+      const count = document.getElementById('reports-count');
+      if (!list || !count) return;
+      count.textContent = state.reports.length;
+
+      if (state.reports.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state" style="padding: 20px;">
+            <p class="empty-state-text" style="font-size: 0.8rem;">Completed reports will be saved here.</p>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = state.reports.map(report => `
+        <div class="report-card" data-report-id="${report.id}">
+          <div class="report-card-title">${escapeHtml(report.question || 'Research report')}</div>
+          <div class="report-meta">${escapeHtml(report.kind || 'main')} · ${new Date(report.timestamp).toLocaleString()} · ${report.notes_count || 0} notes</div>
+        </div>
+      `).join('');
+
+      list.querySelectorAll('.report-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const report = state.reports.find(r => r.id === card.dataset.reportId);
+          if (report) addAssistantMessage(report.report, true);
+        });
+      });
+    }
+
+    async function refreshReports() {
+      state.reports = await state.tools.getReports();
+      updateReportsUI();
+    }
+
+    function saveCurrentReport(question, report, kind = 'main') {
+      const entry = state.tools.saveReport({
+        question,
+        report,
+        kind,
+        notes_count: state.notes.length,
+        sources_count: state.sources.length,
+      });
+      state.reports = [entry, ...state.reports.filter(r => r.id !== entry.id)].slice(0, 20);
+      updateReportsUI();
+    }
+
+    async function submitFollowup() {
+      if (state.isProcessing) return;
+      const input = document.getElementById('followup-input');
+      const question = input.value.trim();
+      if (!question) return;
+
+      const usableNotes = getUsableNotes();
+      if (!usableNotes.length) {
+        addSystemMessage('No usable notes available for a follow-up answer.');
+        return;
+      }
+
+      state.isProcessing = true;
+      document.getElementById('followup-btn').disabled = true;
+      addUserMessage(question);
+      try {
+        const sourceIndex = buildSourceIndex(usableNotes);
+        const section = {
+          heading: 'Follow-up Answer',
+          tags: ['data', 'evidence', 'context', 'counterpoint', 'methodology', 'argument', 'gap_evidence'],
+          topN: getMaxContextNotes(),
+          relevanceThreshold: 0.15,
+          writerPrompt: 'Answer the follow-up question using the supplied project notes. Use citations for factual claims. State uncertainty when notes are incomplete.',
+        };
+        const selected = await selectNotesForSection(section, usableNotes, question);
+        const thinkingEl = addThinkingIndicator();
+        const content = await runSectionWriter(section, selected, [], sourceIndex);
+        thinkingEl.remove();
+        let report = `# Follow-up Answer\n*${question}*\n\n${content}\n\n## Sources\n\n`;
+        for (const [, src] of sourceIndex) {
+          report += `[${src.index}] [${src.title}](${src.url})\n`;
+        }
+        state.currentReport = report;
+        state.currentQuestion = question;
+        addAssistantMessage(report, true);
+        saveCurrentReport(question, report, 'follow_up');
+        input.value = '';
+      } catch (error) {
+        addSystemMessage(`Follow-up error: ${error.message}`);
+      } finally {
+        state.isProcessing = false;
+        document.getElementById('followup-btn').disabled = false;
+      }
+    }
+
+    window.submitFollowup = submitFollowup;
+
+    function escapeCSV(str) {
+      if (str === null || str === undefined) return '""';
+      str = String(str).replace(/"/g, '""');
+      return `"${str}"`;
+    }
+
+    function downloadCSV(csvContent, filename) {
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    window.exportSourcesCSV = function () {
+      if (state.sources.length === 0) return;
+      const headers = ['Title', 'URL', 'Snippet', 'Found At'];
+      const rows = state.sources.map(s => [
+        escapeCSV(s.title),
+        escapeCSV(s.link),
+        escapeCSV(s.snippet),
+        escapeCSV(s.foundAt)
+      ].join(','));
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      downloadCSV(csvContent, 'sources.csv');
+    };
+
+    window.exportNotesCSV = function () {
+      if (state.notes.length === 0) return;
+      const headers = ['Title', 'Role', 'Relevance', 'Content', 'Source URL', 'Timestamp'];
+      const rows = state.notes.map(n => [
+        escapeCSV(n.title),
+        escapeCSV(n.role),
+        escapeCSV(n.relevance),
+        escapeCSV(n.content),
+        escapeCSV(n.source_url),
+        escapeCSV(n.timestamp)
+      ].join(','));
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      downloadCSV(csvContent, 'notes.csv');
+    };
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderMarkdown(text) {
+      // Simple markdown rendering
+      return text
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+        .replace(/^\- (.*$)/gim, '<li>$1</li>')
+        .replace(/^\d+\. (.*$)/gim, '<li>$1</li>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+    }
+
+    // ============================================================
+    // INPUT HANDLING
+    // ============================================================
+
+    async function handleUserInput() {
+      const input = document.getElementById('user-input');
+      const query = input.value.trim();
+
+      if (!query || !state.isLoaded) return;
+
+      input.value = '';
+      input.style.height = 'auto';
+
+      if (state.mode === 'collection') {
+        // In collection mode the textarea is the *target*. We don't open the
+        // modal automatically — the user has already (or should) configured
+        // columns. Sync the target value through and run.
+        state.collectionConfig.target = query;
+        await runCollectionFromState();
+      } else {
+        await runAgentLoop(query);
+      }
+    }
+
+    // Expose to window
+    window.handleUserInput = handleUserInput;
+
+    // Auto-resize textarea
+    document.getElementById('user-input').addEventListener('input', function () {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+    });
+
+    // Enter to send (Shift+Enter for newline)
+    document.getElementById('user-input').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleUserInput();
+      }
+    });
+
+    // Update search tool status when API key is entered and save to localStorage
+    const apiKeyInput = document.getElementById('brave-api-key');
+    const apiStatus = document.getElementById('tool-search-status');
+
+    function updateApiKeyStatus(value) {
+      if (!apiStatus) return;
+      if (value) {
+        apiStatus.textContent = 'ready';
+        apiStatus.className = 'tool-status active';
+      } else {
+        apiStatus.textContent = 'needs key';
+        apiStatus.className = 'tool-status';
+      }
+    }
+
+    apiKeyInput.addEventListener('input', function () {
+      updateApiKeyStatus(this.value);
+      localStorage.setItem('deep_research_brave_key', this.value);
+    });
+
+    // Load saved API key on startup
+    const savedKey = localStorage.getItem('deep_research_brave_key');
+    if (savedKey) {
+      apiKeyInput.value = savedKey;
+      updateApiKeyStatus(savedKey);
+    }
+
+    // Cloudflare Worker URL — save/restore (handles both Brave Search and webpage proxy)
+    const cfWorkerInput = document.getElementById('cf-worker-url');
+    cfWorkerInput.addEventListener('input', function () {
+      const base = this.value.trim().replace(/\/$/, '');
+      localStorage.setItem('deep_research_cf_worker_url', base);
+      state.tools.config.braveSearchEndpoint = base;
+      state.tools.config.corsProxyUrl = base ? base + '/proxy?url=' : '';
+    });
+    const savedWorkerUrl = localStorage.getItem('deep_research_cf_worker_url');
+    if (savedWorkerUrl) {
+      cfWorkerInput.value = savedWorkerUrl;
+    }
+
+    // ============================================================
+    // COLLECTION MODE — toggle, setup modal, live table
+    // ============================================================
+
+    // Switch between Report and Collection mode. Updates the input
+    // placeholder, send-button label, and shows/hides the "Configure" link.
+    function setMode(mode) {
+      state.mode = mode;
+      document.getElementById('mode-tab-report').classList.toggle('active', mode === 'report');
+      document.getElementById('mode-tab-collection').classList.toggle('active', mode === 'collection');
+      document.getElementById('collection-config-row').style.display =
+        (mode === 'collection') ? 'block' : 'none';
+      document.getElementById('report-config-row').style.display =
+        (mode === 'report') ? 'block' : 'none';
+      const userInput = document.getElementById('user-input');
+      const sendBtn = document.getElementById('send-btn');
+      if (mode === 'collection') {
+        userInput.placeholder = 'Describe what to collect (the target)…';
+        sendBtn.textContent = 'Start collection';
+      } else {
+        userInput.placeholder = 'Ask a research question...';
+        sendBtn.textContent = 'Research';
+      }
+      // Advanced-settings sidebar is mode-specific — repopulate it.
+      populateAdvancedSettings();
+    }
+    window.setMode = setMode;
+
+    // --- Setup modal ---
+    function openCollectionModal() {
+      const cfg = state.collectionConfig;
+      document.getElementById('coll-corpus-filter').value = cfg.corpusFilter || '';
+      document.getElementById('coll-chunk-anchor').value = cfg.chunkAnchor || '';
+      document.getElementById('coll-unit').value = cfg.collectionUnit || 'auto';
+      document.getElementById('coll-strategy').value = cfg.retrievalStrategy || 'auto';
+      document.getElementById('coll-templates').value = (cfg.queryTemplates || []).join('\n');
+      document.getElementById('coll-num-queries').value = cfg.numQueries || 5;
+      if (cfg.extractionPrompt) document.getElementById('coll-extraction-prompt').value = cfg.extractionPrompt;
+      renderCollColumns();
+      document.getElementById('coll-error').style.display = 'none';
+      document.getElementById('collection-modal').style.display = 'flex';
+    }
+    window.openCollectionModal = openCollectionModal;
+
+    function closeCollectionModal() {
+      document.getElementById('collection-modal').style.display = 'none';
+    }
+
+    // Render the column-editor rows from state.collectionConfig.columns
+    function renderCollColumns() {
+      const container = document.getElementById('coll-columns');
+      const cols = state.collectionConfig.columns;
+      container.innerHTML = '';
+      cols.forEach((col, idx) => {
+        const row = document.createElement('div');
+        row.className = 'coll-col-row';
+        row.innerHTML = `
+          <div class="coll-col-reorder">
+            <button class="coll-icon-btn" title="Move up" ${idx === 0 ? 'disabled' : ''} data-act="up" data-i="${idx}">▲</button>
+            <button class="coll-icon-btn" title="Move down" ${idx === cols.length - 1 ? 'disabled' : ''} data-act="down" data-i="${idx}">▼</button>
+          </div>
+          <input class="form-input" type="text" value="${escapeHtml(col.name)}" placeholder="Column name" data-act="name" data-i="${idx}">
+          <select class="form-input" data-act="kind" data-i="${idx}">
+            <option value="body"          ${col.kind === 'body' ? 'selected' : ''}>Body text (LLM)</option>
+            <option value="source_url"    ${col.kind === 'source_url' ? 'selected' : ''}>Source URL (auto)</option>
+            <option value="source_title"  ${col.kind === 'source_title' ? 'selected' : ''}>Source title (auto)</option>
+            <option value="source_domain" ${col.kind === 'source_domain' ? 'selected' : ''}>Domain (auto)</option>
+          </select>
+          <button class="coll-icon-btn" title="Remove" data-act="remove" data-i="${idx}" ${cols.length <= 1 ? 'disabled' : ''}>✕</button>
+        `;
+        container.appendChild(row);
+      });
+
+      // Delegate events
+      container.querySelectorAll('[data-act]').forEach(el => {
+        const act = el.dataset.act;
+        const i = parseInt(el.dataset.i);
+        if (act === 'up' || act === 'down' || act === 'remove') {
+          el.onclick = () => mutateCol(act, i);
+        } else if (act === 'name' || act === 'kind') {
+          el.oninput = (e) => { state.collectionConfig.columns[i][act === 'name' ? 'name' : 'kind'] = e.target.value; };
+          el.onchange = el.oninput;
+        }
+      });
+    }
+
+    function mutateCol(act, i) {
+      const cols = state.collectionConfig.columns;
+      if (act === 'remove' && cols.length > 1) cols.splice(i, 1);
+      if (act === 'up' && i > 0) { [cols[i - 1], cols[i]] = [cols[i], cols[i - 1]]; }
+      if (act === 'down' && i < cols.length - 1) { [cols[i + 1], cols[i]] = [cols[i], cols[i + 1]]; }
+      renderCollColumns();
+    }
+
+    function addCollColumn() {
+      state.collectionConfig.columns.push({ name: '', kind: 'body' });
+      renderCollColumns();
+    }
+    window.addCollColumn = addCollColumn;
+
+    // Read modal values into state, validate, and run.
+    async function startCollectionFromModal() {
+      const cfg = state.collectionConfig;
+      // Target is owned by the main textarea — pull it from there.
+      cfg.target = document.getElementById('user-input').value.trim();
+      cfg.corpusFilter = document.getElementById('coll-corpus-filter').value.trim();
+      cfg.chunkAnchor = document.getElementById('coll-chunk-anchor').value.trim();
+      cfg.collectionUnit = document.getElementById('coll-unit').value;
+      cfg.retrievalStrategy = document.getElementById('coll-strategy').value;
+      cfg.queryTemplates = document.getElementById('coll-templates').value
+        .split('\n').map(s => s.trim()).filter(Boolean);
+      cfg.numQueries = Math.max(1, Math.min(20, parseInt(document.getElementById('coll-num-queries').value) || 5));
+      cfg.extractionPrompt = document.getElementById('coll-extraction-prompt').value.trim();
+
+      const errEl = document.getElementById('coll-error');
+      const validCols = cfg.columns.filter(c => c.name.trim());
+      if (!validCols.length) { errEl.textContent = 'At least one named column is required.'; errEl.style.display = 'block'; return; }
+      cfg.columns = validCols.map(c => ({ name: c.name.trim(), kind: c.kind }));
+      errEl.style.display = 'none';
+
+      closeCollectionModal();
+      // Settings saved — the user starts the run by clicking the send button.
+    }
+    window.startCollectionFromModal = startCollectionFromModal;
+
+    // Orchestrate a collection run using the imported collection.js module.
+    async function runCollectionFromState() {
+      if (!state.isLoaded || state.isProcessing) return;
+      const cfg = state.collectionConfig;
+      if (!cfg.target) {
+        addSystemMessage('Set a target via "⚙ Configure" before starting.');
+        return;
+      }
+      if (!cfg.columns.length) {
+        addSystemMessage('Add at least one column via "⚙ Configure" before starting.');
+        return;
+      }
+
+      updateToolConfig();
+      state.isProcessing = true;
+      state.collectionStop = false;
+      state.collectionRows = [];
+      document.getElementById('send-btn').disabled = true;
+
+      // Mount the live-table panel into the chat area.
+      mountCollectionPanel(cfg);
+
+      try {
+        await runCollection(cfg, {
+          tools: state.tools,
+          generateText,
+          shouldStop: () => state.collectionStop,
+          ui: {
+            system: (m) => addSystemMessage(m),
+            phase: (p, d) => addPhaseMessage(p, d),
+            appendRow: (row) => {
+              state.collectionRows.push(row);
+              appendRowToTable(row, cfg);
+              updateRowCount();
+            },
+            clearTable: () => {
+              state.collectionRows = [];
+              const tbody = document.getElementById('collection-tbody');
+              if (tbody) tbody.innerHTML = '';
+              updateRowCount();
+            },
+            // Called once after deduplication with the final clean row set
+            // and the source audit / diagnostics data. Re-renders the table
+            // with deduplicated rows, then appends the audit sections beneath.
+            finalizeRows: (rows, summary) => {
+              // Re-render with deduped rows
+              state.collectionRows = rows;
+              const tbody = document.getElementById('collection-tbody');
+              if (tbody) {
+                tbody.innerHTML = '';
+                for (const row of rows) appendRowToTable(row, cfg);
+              }
+              updateRowCount();
+
+              // Append source audit + diagnostics to the collection panel
+              const wrap = document.querySelector('.collection-results');
+              if (wrap) {
+                // Remove any previous summary
+                wrap.querySelector('.collection-summary')?.remove();
+                wrap.insertAdjacentHTML('beforeend', buildCollectionSummary(summary));
+              }
+            },
+          },
+        });
+      } catch (e) {
+        console.error('Collection error:', e);
+        addSystemMessage(`Collection error: ${e.message}`);
+      } finally {
+        state.isProcessing = false;
+        document.getElementById('send-btn').disabled = false;
+      }
+    }
+
+    function mountCollectionPanel(cfg) {
+      const chat = document.getElementById('chat-container');
+      chat.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'collection-results';
+      const headers = cfg.columns.map(c => `<th>${escapeHtml(c.name)}</th>`).join('');
+      wrap.innerHTML = `
+        <h3>
+          <span>Collection: <em style="color:var(--accent)">${escapeHtml(cfg.target)}</em></span>
+          <span>
+            <span class="count" id="collection-row-count">0 rows</span>
+            <button class="export-btn" style="margin-left:8px" onclick="exportCollectionCSV()">Export CSV</button>
+          </span>
+        </h3>
+        <div class="collection-progress" id="collection-progress"></div>
+        <table class="collection-table">
+          <thead><tr>${headers}</tr></thead>
+          <tbody id="collection-tbody"></tbody>
+        </table>
+      `;
+      chat.appendChild(wrap);
+    }
+
+    function appendRowToTable(row, cfg) {
+      const tbody = document.getElementById('collection-tbody');
+      if (!tbody) return;
+      const tr = document.createElement('tr');
+      tr.innerHTML = cfg.columns.map(c => {
+        const v = row.values[c.name];
+        if (c.kind === 'source_url' && v) {
+          return `<td><a href="${escapeHtml(v)}" target="_blank" rel="noopener">${escapeHtml(v)}</a></td>`;
+        }
+        return `<td>${escapeHtml(v ?? '')}</td>`;
+      }).join('');
+      tbody.appendChild(tr);
+    }
+
+    function updateRowCount() {
+      const el = document.getElementById('collection-row-count');
+      if (el) el.textContent = `${state.collectionRows.length} rows`;
+    }
+
+    window.exportCollectionCSV = function () {
+      if (!state.collectionRows.length) return;
+      const csv = rowsToCSV(state.collectionRows, state.collectionConfig.columns);
+      downloadCSV(csv, 'collection.csv');
+    };
+
+    // Wire collection modal close behaviors
+    document.getElementById('collection-modal-close').addEventListener('click', closeCollectionModal);
+    document.getElementById('collection-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeCollectionModal();
+    });
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+
+    // Check WebGPU on load
+    if (navigator.gpu) {
+      document.getElementById('webgpu-status-dot').className = 'status-dot ready';
+    } else {
+      document.getElementById('webgpu-status-dot').className = 'status-dot error';
+      document.getElementById('webgpu-status-text').textContent = 'WebGPU unavailable';
+    }
+
+    console.log('Deep Research Agent loaded. Click "Load Model" to initialize.');
+
+    // ============================================================
+    // ADVANCED SETTINGS — read live values from UI inputs
+    // ============================================================
+
+    const ALLOWED_SITES_STORAGE_KEY = 'deep_research_allowed_sites';
+
+    function getAllowedSearchSitesText() {
+      return document.getElementById('allowed-search-sites')?.value || '';
+    }
+
+    function getAllowedSearchSites() {
+      return getAllowedSearchSitesText()
+        .split(/[\n,]+/)
+        .map(site => site.trim())
+        .filter(Boolean);
+    }
+
+    function getResearchAngles() {
+      return RESEARCH_ANGLES.map((angle, i) => ({
+        ...angle,
+        label: document.getElementById(`angle-${i}-label`)?.value.trim() || angle.label,
+        queryContext: document.getElementById(`angle-${i}-query-context`)?.value.trim() || angle.queryContext,
+        notePrompt: document.getElementById(`angle-${i}-note-prompt`)?.value.trim() || angle.notePrompt,
+        numQueries: Math.max(1, Math.min(10, parseInt(document.getElementById(`angle-${i}-num-queries`)?.value) || 3)),
+        extractionDepth: document.getElementById(`angle-${i}-depth`)?.value || 'standard',
+      }));
+    }
+
+    function getReportSections() {
+      return REPORT_SECTIONS.map((section, i) => ({
+        ...section,
+        heading: document.getElementById(`section-${i}-heading`)?.value.trim() || section.heading,
+        writerPrompt: document.getElementById(`section-${i}-writer-prompt`)?.value.trim() || section.writerPrompt,
+        topN: Math.max(1, Math.min(20, parseInt(document.getElementById(`section-${i}-topn`)?.value) || section.topN || 6)),
+        relevanceThreshold: Math.max(0, Math.min(1, parseFloat(document.getElementById(`section-${i}-threshold`)?.value) || 0.2)),
+      }));
+    }
+
+    function populateAdvancedSettings() {
+      const container = document.getElementById('advanced-settings-content');
+      container.innerHTML = '';
+
+      const field = (labelText, id, value, placeholder, isTextarea, rows = 2) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'agent-field';
+        if (labelText) {
+          const lbl = document.createElement('label');
+          lbl.className = 'form-label';
+          lbl.htmlFor = id;
+          lbl.textContent = labelText;
+          wrap.appendChild(lbl);
+        }
+        const el = document.createElement(isTextarea ? 'textarea' : 'input');
+        el.className = 'form-input ' + (isTextarea ? 'agent-textarea' : 'agent-label-input');
+        el.id = id;
+        el.placeholder = placeholder;
+        el.value = value;
+        if (isTextarea) el.rows = rows;
+        wrap.appendChild(el);
+        return wrap;
+      };
+
+      // In Collection mode the report-agent / section editors are irrelevant.
+      // Show a short help card pointing the user to the ⚙ Configure modal instead.
+      if (state.mode === 'collection') {
+        const card = document.createElement('div');
+        card.className = 'advanced-help';
+        card.innerHTML = '<strong>Collection mode</strong> — research angles and report sections are disabled. '
+          + 'Configure columns, retrieval strategy, and search settings via the '
+          + '<em>⚙ Configure columns &amp; strategy…</em> link above the main input.';
+        container.appendChild(card);
+
+        // Allowed-sites still applies in both modes; keep it visible.
+        const searchCard = document.createElement('div');
+        searchCard.className = 'agent-card';
+        const allowedSitesField = field('Allowed websites', 'allowed-search-sites',
+          localStorage.getItem(ALLOWED_SITES_STORAGE_KEY) || '',
+          'reuters.com\nsec.gov\nsam.gov', true, 4);
+        searchCard.appendChild(allowedSitesField);
+        container.appendChild(searchCard);
+        const allowedSitesInput = allowedSitesField.querySelector('#allowed-search-sites');
+        allowedSitesInput.addEventListener('input', function () {
+          localStorage.setItem(ALLOWED_SITES_STORAGE_KEY, this.value);
+          state.tools.config.allowedSites = getAllowedSearchSites();
+        });
+        return;
+      }
+
+      const selectField = (labelText, id, value, options) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'agent-field';
+        const lbl = document.createElement('label');
+        lbl.className = 'form-label';
+        lbl.htmlFor = id;
+        lbl.textContent = labelText;
+        wrap.appendChild(lbl);
+        const el = document.createElement('select');
+        el.className = 'form-input';
+        el.id = id;
+        for (const option of options) {
+          const opt = document.createElement('option');
+          opt.value = option.value;
+          opt.textContent = option.label;
+          if (option.value === value) opt.selected = true;
+          el.appendChild(opt);
+        }
+        wrap.appendChild(el);
+        return wrap;
+      };
+
+      const searchHelp = document.createElement('div');
+      searchHelp.className = 'advanced-help';
+      searchHelp.innerHTML = '<strong>Search Restrictions</strong> — optionally limit all web searches to specific domains. '
+        + 'Add one domain per line. Multiple domains are combined with <em>OR</em>.';
+      container.appendChild(searchHelp);
+
+      const searchCard = document.createElement('div');
+      searchCard.className = 'agent-card';
+      const allowedSitesField = field('Allowed websites', 'allowed-search-sites',
+        localStorage.getItem(ALLOWED_SITES_STORAGE_KEY) || '',
+        'reuters.com\nsec.gov\nsam.gov',
+        true,
+        4
+      );
+      searchCard.appendChild(allowedSitesField);
+      container.appendChild(searchCard);
+
+      const allowedSitesInput = allowedSitesField.querySelector('#allowed-search-sites');
+      allowedSitesInput.addEventListener('input', function () {
+        localStorage.setItem(ALLOWED_SITES_STORAGE_KEY, this.value);
+        state.tools.config.allowedSites = getAllowedSearchSites();
+      });
+
+      // Researcher agents
+      const rHelp = document.createElement('div');
+      rHelp.className = 'advanced-help';
+      rHelp.innerHTML = '<strong>Research Agents</strong> — each runs independently on a focused angle. '
+        + 'Keep prompts to 1–2 sentences. Use domain terms and <em>site:</em> operators in Search focus. '
+        + 'Always end Extraction prompts with: <em>Never write "I cannot provide".</em>';
+      container.appendChild(rHelp);
+
+      RESEARCH_ANGLES.forEach((angle, i) => {
+        const card = document.createElement('div');
+        card.className = 'agent-card';
+        const hdr = document.createElement('div');
+        hdr.className = 'agent-card-header';
+        hdr.appendChild(field(null, `angle-${i}-label`, angle.label, 'Agent name', false));
+        card.appendChild(hdr);
+        const controls = document.createElement('div');
+        controls.className = 'inline-grid';
+        controls.appendChild(field('Queries', `angle-${i}-num-queries`, '3', '3', false));
+        controls.appendChild(selectField('Depth', `angle-${i}-depth`, 'standard', [
+          { value: 'quick', label: 'Quick' },
+          { value: 'standard', label: 'Standard' },
+          { value: 'deep', label: 'Deep' },
+        ]));
+        card.appendChild(controls);
+        card.appendChild(field('Search focus', `angle-${i}-query-context`, angle.queryContext,
+          'What this researcher searches for. Suggest site: operators for useful databases.', true, 2));
+        card.appendChild(field('Extraction prompt', `angle-${i}-note-prompt`, angle.notePrompt,
+          "What to extract from each page. Be specific about names, numbers, dates. End with: Never write \"I cannot provide\".", true, 3));
+        container.appendChild(card);
+      });
+
+      // Report sections
+      const sHelp = document.createElement('div');
+      sHelp.className = 'advanced-help';
+      sHelp.style.marginTop = '14px';
+      sHelp.innerHTML = '<strong>Report Sections</strong> — one writer per section, each receiving only '
+        + 'notes from its tagged researchers. Keep prompts to 1–2 sentences. '
+        + 'Mention citation style: <em>[1], [2]</em>';
+      container.appendChild(sHelp);
+
+      REPORT_SECTIONS.forEach((section, i) => {
+        const card = document.createElement('div');
+        card.className = 'agent-card';
+        const hdr = document.createElement('div');
+        hdr.className = 'agent-card-header';
+        hdr.appendChild(field(null, `section-${i}-heading`, section.heading, 'Section heading', false));
+        card.appendChild(hdr);
+        const controls = document.createElement('div');
+        controls.className = 'inline-grid';
+        controls.appendChild(field('Max notes', `section-${i}-topn`, String(section.topN || 6), '6', false));
+        controls.appendChild(field('Threshold', `section-${i}-threshold`, '0.2', '0.2', false));
+        card.appendChild(controls);
+        card.appendChild(field('Writer prompt', `section-${i}-writer-prompt`, section.writerPrompt,
+          'Instructions for the section writer. Specify structure and citation format.', true, 3));
+        container.appendChild(card);
+      });
+
+      const resetBtn = document.createElement('button');
+      resetBtn.className = 'reset-btn';
+      resetBtn.textContent = 'Reset to defaults';
+      resetBtn.onclick = resetAdvancedSettings;
+      container.appendChild(resetBtn);
+    }
+
+    function resetAdvancedSettings() {
+      localStorage.removeItem(ALLOWED_SITES_STORAGE_KEY);
+      state.tools.config.allowedSites = [];
+      populateAdvancedSettings();
+    }
+
+    function openAdvancedModal() {
+      // Rebuild the form each time so it reflects the current mode and any
+      // freshly added sections. Then reveal the modal.
+      populateAdvancedSettings();
+      document.getElementById('advanced-modal').style.display = 'flex';
+    }
+    function closeAdvancedModal() {
+      document.getElementById('advanced-modal').style.display = 'none';
+    }
+    window.openAdvancedModal = openAdvancedModal;
+    window.resetAdvancedSettings = resetAdvancedSettings;
+
+    document.getElementById('advanced-modal-close').addEventListener('click', closeAdvancedModal);
+    document.getElementById('advanced-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeAdvancedModal();
+    });
+
+    // About modal
+    document.getElementById('about-btn').addEventListener('click', () => {
+      document.getElementById('about-modal').style.display = 'flex';
+    });
+    document.getElementById('modal-close').addEventListener('click', () => {
+      document.getElementById('about-modal').style.display = 'none';
+    });
+    document.getElementById('about-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+
+    // Cloudflare Worker help modal
+    document.getElementById('cf-worker-help-btn').addEventListener('click', () => {
+      document.getElementById('cf-worker-modal').style.display = 'flex';
+    });
+    document.getElementById('cf-worker-modal-close').addEventListener('click', () => {
+      document.getElementById('cf-worker-modal').style.display = 'none';
+    });
+    document.getElementById('cf-worker-modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) e.currentTarget.style.display = 'none';
+    });
+    document.getElementById('copy-worker-code-btn').addEventListener('click', () => {
+      const code = document.getElementById('cf-worker-code').textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('copy-worker-code-btn');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.textContent = '📋 Copy worker code'; }, 2000);
+      });
+    });
+
+    // Populate advanced settings on load
+    populateAdvancedSettings();
+    refreshReports();
+  </script>
+</body>
+
+</html>
