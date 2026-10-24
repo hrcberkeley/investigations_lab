@@ -12,7 +12,7 @@ const sheet = (w) => `
     <p class="meta">Worksheet · ${esc(w.version)}</p>
     <h4>${esc(w.title)}</h4>
     <p>${esc(w.summary)}</p>
-    <div class="acts"><a class="act" href="${encodeURI(w.file)}" download>Download .docx</a></div>
+    <div class="acts"><a class="act primary" href="sheets/${w.id}.html">Read</a><a class="act" href="${encodeURI(w.file)}" download>.docx</a></div>
   </article>`;
 
 const tool = (t) => {
@@ -79,14 +79,13 @@ document.addEventListener("pointerout", (e) => {
 // (timestamps, file names, coordinates, links). A soft light follows the pointer and brings it up; the
 // investigations come up in colour and open their project page. It opens with a flare that lights the whole
 // field for a moment, then closes down to the lantern. With nobody pointing, the light wanders on its own.
-const hero = document.getElementById("hero"), copy = hero.querySelector(".copy"), readout = hero.querySelector(".readout");
-const C = { ink: "#0e1218", paper: "#f3efe6", signal: "#ffb21a" };
+const hero = document.getElementById("hero"), copy = hero.querySelector(".copy");
+const C = { ink: "#001a47", paper: "#ffffff", signal: "#ff5c6c" };
 const items = content.investigations;
 const noise = ["IMG_4471.jpg", "2019-03-14 08:22", "33.5138° N", "t.me/…/1182", "frame 0412", "archive.today/…", "VID_20210611.mp4",
   "sha256 9f2c…", "before:2024-06-01", "site:gov filetype:pdf", "EXIF: none", "44.0812° E", "@account_77", "web.archive.org/…",
   "UTC+3", "shadow 41°", "/r/…/comments", "dup? 0.93", "lang: ckb", "post deleted", "doc_0031.pdf", "geo: unverified"];
 const ITEM_FONT = `600 13px "Azeret Mono", monospace`, NOISE_FONT = `400 12px "Azeret Mono", monospace`;
-const idle = `${items.length} investigations, 2016–2026 · move the light to find them`;
 
 const canvas = document.createElement("canvas");
 canvas.setAttribute("aria-hidden", "true");
@@ -94,7 +93,7 @@ hero.prepend(canvas);
 const ctx = canvas.getContext("2d");
 const p = { x: -1e4, y: -1e4, over: false };
 const light = { x: 0, y: 0 };
-let W = 0, H = 0, R0 = 150, cells = [], hot = null, lastSeen = -1e4, t0 = null, visible = false, queued = false, shown = "";
+let W = 0, H = 0, R0 = 150, cells = [], hot = null, lastSeen = -1e4, t0 = null, visible = false, queued = false;
 
 function layout() {
   const hr = hero.getBoundingClientRect(), cr = copy.getBoundingClientRect();
@@ -157,7 +156,7 @@ function frame(t) {
 
   ctx.globalAlpha = 1; ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H);
   const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, R * 1.3);
-  g.addColorStop(0, "rgba(255,178,26,0.10)"); g.addColorStop(1, "rgba(255,178,26,0)");
+  g.addColorStop(0, "rgba(120,160,255,0.10)"); g.addColorStop(1, "rgba(120,160,255,0)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
   ctx.textBaseline = "middle";
@@ -180,8 +179,6 @@ function frame(t) {
     }
   }
   canvas.style.cursor = hot ? "pointer" : "";
-  const msg = hot ? `Open ↗ ${hot.item.title}` : idle;
-  if (msg !== shown) { readout.textContent = shown = msg; readout.classList.toggle("on", !!hot); }
   if (!still && visible) schedule();
 }
 const schedule = () => { if (!queued) { queued = true; requestAnimationFrame(frame); } };

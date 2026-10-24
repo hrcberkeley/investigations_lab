@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installing the Save to Sheets Extension · Investigations Lab</title>
+<meta name="description" content="Set up the Save to Sheets extension so your team can collect URLs and their metadata in one shared spreadsheet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,800;0,900;1,400&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="reader">
+<header class="doc-bar">
+  <a href="../#preserve">← Investigations Lab</a>
+  <a href="save-to-sheets.docx" download>Download .docx</a>
+</header>
+<main class="doc">
+  <p class="kicker">Worksheet · Preserve · May 2026</p>
+  <h1>Installing the Save to Sheets Extension</h1>
+<p><strong>Pre-requisites</strong></p>
+<ul>
+<li><p>Install a Chromium-based browser. It can be <a target="_blank" rel="noopener" href="https://www.google.com/chrome/">Chrome</a>, <a target="_blank" rel="noopener" href="https://brave.com/download/">Brave</a>, <a target="_blank" rel="noopener" href="https://arc.net/">Arc</a>, etc. <strong>This is not an endorsement!</strong></p></li>
+<li><p>Create a Google Spreadsheet</p></li>
+</ul>
+<p><strong>Goals:</strong></p>
+<ul>
+<li><p>Installing the save-to-sheets extension</p></li>
+</ul>
+<h3 id="introduction">Introduction</h3>
+<p>The purpose of the save-to-theets Chrome extension is to help individual investigators or teams to create a repository of digital resources in a spreadsheet. The extension does nothing apart from reducing the friction of having to collect individual URLs and their metadata and pasting them into a shared spreadsheet.</p>
+<h3 id="installation-instructions">Installation instructions</h3>
+<p>Go to the extensions’ <a target="_blank" rel="noopener" href="https://github.com/kolenyo2099/save-to-sheets">Github page</a>. Look for the green button that says “code”. Click it.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image3.png" /></p>
+<p>You’ll get these options:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image23.png" /></p>
+<p>Click on “Download ZIP”, unpack it and save the folder in a place where you can find it later. Then, open Chrome and go to chrome://extensions/</p>
+<p><img loading="lazy" src="media/save-to-sheets/image25.png" /></p>
+<p>You should get a settings tab that looks like this:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image1.png" /></p>
+<p>In the top right corner, you need to toggle the “developer mode” to enable Developer mode. Your tab will change into something like this:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image7.png" /></p>
+<p>Click Load unpacked and select the file you downloaded!</p>
+<p>The extension should now appear in your extensions tab!</p>
+<p><img loading="lazy" src="media/save-to-sheets/image6.png" /></p>
+<p>You can pin it to your toolbar for easier access. In the toolbar, look for the icon that looks like a puzzle piece:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image8.png" /></p>
+<p>Click it and you’ll get something that looks like this:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image13.png" /></p>
+<p>Click on the pin and the extension will now stay on your tool bar. Or… extensions bar. Now you can click on it to start setting it up.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image10.png" /></p>
+<p>If you click on“Manage Projects &amp; Settings”, a new tab will pop up, so you can set up your collection project:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image14.png" /></p>
+<h2 id="setting-up-a-project">Setting up a project</h2>
+<p>Once the extension is installed, you need to fill out the settings of your first project. By default, projects are called “Project 1, Project 2…”, but you can change their names by clicking on the “Rename” button.</p>
+<ol type="1">
+<li><p>Who are you?</p></li>
+</ol>
+<p>Each entry that you add to the spreadsheet will have attached this data point so you can track who added what. Agree with your teammates whether you’ll go with full names or pseudonyms in case you need to keep your identity separated from the investigation in publicly accessible documents. In the latter case, remember that at least one person in the team should hold an analogous ledger with people and pseudonyms, stored in a safe place.</p>
+<p>The ID prefix is also decided by your team, and it’s only needed if you are keeping track of your digital objects across multiple projects. You can leave it empty.</p>
+<ol start="2" type="1">
+<li><p>Set up your Google Sheet.</p></li>
+</ol>
+<p>This is the most important (and the only complicated) step. Open a new or existing google spread sheet and look for the “Extensions” menu and the “App Scripts” item.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image12.png" /></p>
+<p>When you click on it, a new tab will open and you will be redirected to something that looks like this:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image2.png" /></p>
+<p>Now you need to double click on the code area (the right panel), delete the code, and go back to extensions settings to copy the code in step 2. If you scroll down, you’ll see a “copy script” button. Click it.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image15.png" /></p>
+<p>Now paste the code in the code panel of the Apps Script window, like so:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image4.png" /></p>
+<p>Rename your project by clicking on “Untitled Project” and then click the save button between the undo and redo arrows and the run button. Then, click on the blue “Deploy” button in the top right of the screen. You’ll get the following options:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image5.png" /></p>
+<p>Click “New deployment”. You’ll see a modal popping up asking you to select a deployment type. Click on the gear button next to select type, like so:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image20.png" /></p>
+<p>Select “Web app”. This will change the menu into something like this:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image16.png" /></p>
+<p>Add a description and <strong>change the “Who has access” settings so it selects “Anyone”.</strong> Like so:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image18.png" /></p>
+<p>Then click on Deploy. If your Google account is managed or certain security settings are enabled, you may get something like this below. <strong>It’s ok if you don’t!</strong> But if you do, click on “Authorize access”.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image21.png" /></p>
+<p>You’ll get a Google Security pop-up window that looks like this one below. Mine says “Untitled project” because I didn’t change the name. Yours will have the name you decided to give it. Scroll to the bottom and click on “Continue”.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image24.png" /></p>
+<p>After clicking “Continue”, you’ll get this modal below. What’s important for us is the Web app URL. Click the copy button! Then click “Done”.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image22.png" /></p>
+<p>Go back to the Save-to-sheets extension settings tab, and scroll down to step 3 “Paste your Apps Script URL” like so:<img loading="lazy" src="media/save-to-sheets/image17.png" /></p>
+<p>Then click on “Test connection”. You should get a “✅ Connection works! Check your sheet for the test row.” You can delete that row in your spreadsheet. You managed to go over the hardest part!</p>
+<p>By default, the extension saves the fields seen in the image below, but if you’re an advanced user, you can either detect the rows of an existing spreadsheet and map them to what the extension can save, or create your own structure. You can read the <a target="_blank" rel="noopener" href="https://github.com/kolenyo2099/save-to-sheets/blob/main/README.md">README.md</a> on GitHub for these advanced settings.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image9.png" /></p>
+<p>Now, whenever you want to save a website, you can right click anywhere on the page (be careful that no text is selected, otherwise the extension won’t fire), and run the extension through the menu:</p>
+<p><img loading="lazy" src="media/save-to-sheets/image19.png" /></p>
+<p><strong>Note:</strong> The extension adds a nice “Save” icon to Google results, Tweets, Facebook posts and other pre-defined digital objects, but this may break as platforms change their settings. The most reliable way to use the extension is by using the right click menu.</p>
+<p><img loading="lazy" src="media/save-to-sheets/image11.png" /></p>
+</main>
+</body>
+</html>

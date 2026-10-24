@@ -249,7 +249,7 @@
       "stage": "find",
       "kind": "extension",
       "name": "Sidekick",
-      "summary": "A browser sidebar that does what the Claude for Chrome extension does, using a local model in LM Studio. No data leaves your machine.",
+      "summary": "A browser sidebar that does what the Claude for Chrome extension does, using a local model in LM Studio, so nothing you read or ask about leaves your machine.",
       "source": "https://github.com/kolenyo2099/sidekick"
     },
     {
@@ -281,7 +281,7 @@
       "stage": "preserve",
       "kind": "desktop",
       "name": "HRC Archiver",
-      "summary": "Bellingcat's Auto Archiver with a graphical interface and no Google integrations. Archive links to video, images and social media posts.",
+      "summary": "Bellingcat's Auto Archiver with a graphical interface and without the Google integrations, for archiving links to video, images and social media posts.",
       "source": "https://github.com/kolenyo2099/hrc-archiver"
     },
     {

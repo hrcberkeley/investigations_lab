@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Advanced Search Operators Quick Reference · Investigations Lab</title>
+<meta name="description" content="A one-page reference for exact phrases, exclusions, site and file-type searches, date ranges and more.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,800;0,900;1,400&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="reader">
+<header class="doc-bar">
+  <a href="../#find">← Investigations Lab</a>
+  <a href="operators.docx" download>Download .docx</a>
+</header>
+<main class="doc">
+  <p class="kicker">Worksheet · Find · July 2025</p>
+  <h1>Advanced Search Operators Quick Reference</h1>
+<p>This document provides an overview of advanced search engine operators for <strong>Google</strong> and <strong>Bing</strong>. Use these operators to refine your search results and find more precise information. Given tech’s capricious nature, they may stop working at any point.</p>
+<h3 id="google-operators">1. Google Operators</h3>
+<h4 id="quoted-searches">1.1 Quoted Searches</h4>
+<ul>
+<li><p><strong>Operator</strong>: "" (quotation marks)</p></li>
+<li><p><strong>Usage</strong>: Place a term or phrase in quotes.</p></li>
+<li><p><strong>Example</strong>: "artificial intelligence"</p></li>
+<li><p><strong>Effect</strong>: Returns results containing the exact phrase within quotes.</p></li>
+</ul>
+<h4 id="exclusion">1.2 Exclusion</h4>
+<ul>
+<li><p><strong>Operator</strong>: -</p></li>
+<li><p><strong>Usage</strong>: Prepend a minus sign to terms you want to exclude.</p></li>
+<li><p><strong>Example</strong>: machine learning -deep</p></li>
+<li><p><strong>Effect</strong>: Returns pages mentioning “machine learning” but not “deep.”</p></li>
+</ul>
+<h4 id="or-searches">1.3 OR Searches</h4>
+<ul>
+<li><p><strong>Operator</strong>: OR</p></li>
+<li><p><strong>Usage</strong>: Place OR between terms.</p></li>
+<li><p><strong>Example</strong>: robots OR automation</p></li>
+<li><p><strong>Effect</strong>: Returns results containing either "robots" or "automation" (or both).</p></li>
+</ul>
+<h4 id="site-search">1.4 Site Search</h4>
+<ul>
+<li><p><strong>Operator</strong>: site:</p></li>
+<li><p><strong>Usage</strong>: site:domain</p></li>
+<li><p><strong>Example</strong>: site:wikipedia.org "quantum mechanics"</p></li>
+<li><p><strong>Effect</strong>: Returns results from a specific domain.</p></li>
+</ul>
+<h4 id="file-type-search">1.5 File Type Search</h4>
+<ul>
+<li><p><strong>Operator</strong>: filetype:</p></li>
+<li><p><strong>Usage</strong>: search terms filetype:pdf</p></li>
+<li><p><strong>Example</strong>: "marketing plan" filetype:pdf</p></li>
+<li><p><strong>Effect</strong>: Returns documents of a certain file type (e.g., PDF).</p></li>
+</ul>
+<h4 id="in-title-url-or-text">1.6 In Title, URL, or Text</h4>
+<ul>
+<li><p><strong>Operators</strong>: intitle:, inurl:, intext:</p></li>
+<li><p><strong>Usage</strong>: intitle:term, inurl:term, intext:term</p></li>
+<li><p><strong>Examples</strong>:</p>
+<ul>
+<li><p>intitle:statistics</p></li>
+<li><p>inurl:gallery</p></li>
+<li><p>intext:"climate change"</p></li>
+</ul></li>
+<li><p><strong>Effect</strong>: Limits results to pages with the specified term in the title, URL, or body text.</p></li>
+</ul>
+<h4 id="numeric-ranges">1.7 Numeric Ranges</h4>
+<ul>
+<li><p><strong>Operator</strong>: ..</p></li>
+<li><p><strong>Usage</strong>: term number..number</p></li>
+<li><p><strong>Example</strong>: smartphone 2019..2021</p></li>
+<li><p><strong>Effect</strong>: Finds results mentioning smartphone and any number in the specified range (e.g., years 2019, 2020, 2021).</p></li>
+
+</ul>
+<h4 id="definitions">1.8 Definitions</h4>
+<ul>
+<li><p><strong>Operator</strong>: define:</p></li>
+<li><p><strong>Usage</strong>: define:term</p></li>
+<li><p><strong>Example</strong>: define:metamorphosis</p></li>
+<li><p><strong>Effect</strong>: Provides a definition or summary of the term (though often you can just type “define metamorphosis” without the colon).</p></li>
+</ul>
+<h4 id="proximity-search">1.10 Proximity Search</h4>
+<ul>
+<li><p><strong>Operator</strong>: AROUND(X)</p></li>
+<li><p><strong>Usage</strong>: term1 AROUND(X) term2</p></li>
+<li><p><strong>Example</strong>: "artificial intelligence" AROUND(5) ethics</p></li>
+<li><p><strong>Effect</strong>: Returns results where the two terms appear within X words of each other. The number in parentheses specifies the maximum word distance between the search terms.</p></li>
+</ul>
+<h3 id="bing-operators">2. Bing Operators</h3>
+<p>Bing shares many of the same operators with Google (such as quotation marks, minus sign, and OR). Some Bing-specific nuances are listed below.</p>
+<h4 id="site">2.1 site:</h4>
+<ul>
+<li><p><strong>Usage</strong>: site:microsoft.com edge browser</p></li>
+<li><p><strong>Effect</strong>: Searches only within microsoft.com.</p></li>
+</ul>
+<h4 id="filetype">2.2 filetype:</h4>
+<ul>
+<li><p><strong>Usage</strong>: bing ads filetype:ppt</p></li>
+<li><p><strong>Effect</strong>: Searches for files of a specific type (e.g., PPT).</p></li>
+</ul>
+<h4 id="contains">2.3 contains:</h4>
+<ul>
+<li><p><strong>Usage</strong>: example.com contains:pdf</p></li>
+<li><p><strong>Effect</strong>: Returns pages on example.com that link to PDF files.</p></li>
+</ul>
+<h4 id="language-or-lang">2.4 language: (or lang:)</h4>
+<ul>
+<li><p><strong>Usage</strong>: language:en keywords</p></li>
+<li><p><strong>Effect</strong>: Limits results to a specific language.</p></li>
+</ul>
+<h4 id="ip">2.5 ip:</h4>
+<ul>
+<li><p><strong>Usage</strong>: ip:192.168.1.1</p></li>
+<li><p><strong>Effect</strong>: Shows websites hosted at the specified IP address.</p></li>
+</ul>
+<h3 id="general-tips">3. General Tips</h3>
+<ol type="1">
+<li><p>Combine operators to refine results (e.g., site:edu filetype:pdf "data science" -deep).</p></li>
+<li><p>Use parentheses to group search terms when combining operators (e.g., (AI OR "machine learning") intitle:research).</p></li>
+<li><p>Remember that advanced operators can change over time, and some operators may be deprecated or behave differently across Google and Bing.</p></li>
+</ol>
+</main>
+</body>
+</html>

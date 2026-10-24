@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Archiving Basics · Investigations Lab</title>
+<meta name="description" content="From a better browser history to the Internet Archive and scripted archiving: keep a research trail you can trace back.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,800;0,900;1,400&family=Azeret+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../style.css">
+</head>
+<body class="reader">
+<header class="doc-bar">
+  <a href="../#preserve">← Investigations Lab</a>
+  <a href="archiving.docx" download>Download .docx</a>
+</header>
+<main class="doc">
+  <p class="kicker">Worksheet · Preserve · February 2026</p>
+  <h1>Archiving Basics</h1>
+<p><strong>Pre-requisites</strong></p>
+<ul>
+<li><p>Install a Chromium-based browser. It can be <a target="_blank" rel="noopener" href="https://www.google.com/chrome/">Chrome</a>, <a target="_blank" rel="noopener" href="https://brave.com/download/">Brave</a>, <a target="_blank" rel="noopener" href="https://arc.net/">Arc</a>, etc. <strong>This is not an endorsement!</strong></p></li>
+</ul>
+<p><strong>Goals:</strong></p>
+<ul>
+<li><p>Exploring some archiving options to preserve digital content that may disappear</p></li>
+</ul>
+<h2 id="introduction">Introduction</h2>
+<p>This has definitely happened to you at least once: in the process of browsing the web, you come across something of interest and you think “I should bookmark this so I can access it later”. A few months go by, and when you return, the content is gone. Digital data is ephemeral, a little bit by nature, a little bit by nurture. Sometimes files get corrupted, accidentally deleted, or their owners decide that their photo/video was too <em>cringe</em> and they pull it down from Instagram. Other times, data does not survive updates to platform’s terms and conditions, and content that was totally ok one day becomes susceptible to deletion the next (see Gif 1, below). In the most egregious cases, governments that are <em>slightly</em> unhappy with how people are using the data they produce may decide to delete it or hide it deep in their bureaucratic networks, only accessible after making sense of dozens of circular links and nestled repositories. Only thanks to committed <a target="_blank" rel="noopener" href="https://envirodatagov.org/">activists</a> or <a target="_blank" rel="noopener" href="https://www.reddit.com/r/datahoarders/">random chronically online people</a> does crucial data manages to survive the whims of tech overlords or moody politicians.</p>
+<p><img loading="lazy" src="media/archiving/image6.gif" /></p>
+<p>A visualization of the Great YouTube Purge in 2019 that removed “fringe” content, most of which does not exist anymore. Credits: <a target="_blank" rel="noopener" href="https://oilab.eu/4chans-youtube-a-fringe-perspective-on-youtubes-great-purge-of-2019/">Oilab.nl</a></p>
+<p>The only solution against the ephemerality of digital data is to carefully and methodically archive content that is relevant for your investigation. Keep in mind that this also refers to the research trail you build while galavanting online: being able to trace back your steps to understand how you got to important data points is as important as the data themselves.</p>
+<p>In the following paragraphs, we explore some strategies to archive digital data, ranging from the most basic, to some python wrangling.</p>
+<p>For some cool examples of how web archiving can support journalistic investigations specifically, you should have a look at this awesome write up: https://blog.archive.org/2026/02/02/follow-the-changes/</p>
+<h2 id="the-very-basic">The very basic</h2>
+<p>Your browser history keeps track of all your digital journeys. When it comes to digital investigations, a good history can be the difference between being able to provide evidence of the robustness of your findings or not. Unfortunately, the base browser history functionality of most modern browsers is not good enough to serve the purposes of backtracking your investigative steps. Therefore, we strongly suggest that you install Better History.</p>
+<p>Click on the image below to go to the chrome web store. Make sure that you’re using your research browser, not connected to your personal accounts. Then click on the “Add to Chrome” button.</p>
+<p><a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/better-history-manage-exp/egehpkpgpgooebopjihjmnpejnjafefi"><img loading="lazy" src="media/archiving/image3.png" /></a></p>
+<p>You will then be presented with the screen below (or something similar if the extension has been updated since we made this work sheet).</p>
+<p><img loading="lazy" src="media/archiving/image7.png" /></p>
+<p>Click on the “Open BetterHistory” button at the bottom of the welcome screen.</p>
+<p>You will get a screen that looks something like the image below. From here, you will be able to explore the sites that you have visited since you installed the extension. What’s cool about better history is not only its much better design, but also its ability to use r<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Regular_expression">egular expressions</a> to search across your browser history. This may not sound handy when your browser history is small, but as you develop multiple projects, you’ll notice its utility.</p>
+<p><img loading="lazy" src="media/archiving/image1.png" />.</p>
+<h2 id="archiving-via-a-third-party">Archiving via a third party</h2>
+<h3 id="the-internet-archive">2.1 The Internet Archive</h3>
+<p>If your goal is to preserve a specific version of a website that otherwise is unlikely to disappear (e.g. the list of available datasets in a governmental website <em>today</em>), you can rely on third party services to keep a snapshot of the content for you. The most well known alternative is the Internet Archive. This is what the landing page looked like in February 2026:</p>
+<p><img loading="lazy" src="media/archiving/image4.png" /></p>
+<p>If you click on “WEB”, at the top left corner, you’ll be presented with a menu that allows you to submit a url for preservation (see the “Save Page Now” section in the top right. You can also just follow <a target="_blank" rel="noopener" href="https://web.archive.org/save">this</a> link.</p>
+<p><img loading="lazy" src="media/archiving/image2.png" /></p>
+<p>You don’t need to be signed on to save a page, but a few extra options are available when you are. For example, downloading a WACZ file, which contains the snapshot you’re interested in preserving, or adding the snapshot to your collection, which can be handy to organize your investigative archive if you have multiple investigations going on. Note that the Internet Archive also has a chrome extension which makes this process a bit faster. You can download it <a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/wayback-machine/fpnmgdkabkmnadcjpehmlllkndpkmiak">here</a>.</p>
+<p>While the Internet Archive is an absolutely awesome project and we should be extremely grateful for its existence (and maybe donate to it, if you can afford it), it has a lot of difficulties archiving complex webpages. Given that the organization does not have unlimited resources, videos and images often get lost and any dynamically generated content will most likely not make it to the archive. That’s the downside. If you’re interested in preserving any of this, you’ll be better off using a local method (see the next section).</p>
+<p>Apart from the Internet Archive, there are many other services that offer similar functionality. Why you would prefer these over the Way Back Machine is entirely a matter of personal preference, since some of them offer extra features. Some services, however, have triggered a bit of controversy (archive.today), so you may want to steer clear of them if your investigation requires a high level of security (but in that case you should probably do a local archive). These are a few examples:</p>
+<ul>
+<li><p><a target="_blank" rel="noopener" href="http://archive.is">archive.is</a> (or archive.today and many other domains.</p></li>
+<li><p><a target="_blank" rel="noopener" href="https://www.freezepage.com/">Freeze page</a></p></li>
+<li><p><a target="_blank" rel="noopener" href="http://perma.cc">Perma.cc</a></p></li>
+</ul>
+<p>Of course, Wikipedia keeps a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Wikipedia:List_of_web_archives_on_Wikipedia">list of archiving services</a> you may want to check out if you’re curious.</p>
+<h2 id="archiving-with-browser-extensions">Archiving with browser extensions</h2>
+<p>Sometimes you need more control over what gets archived, or you're dealing with content that won't make it to the Internet Archive's servers intact. Browser extensions can help in those situations. Here are three options:</p>
+<p><a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/archive-page/gcaimhkfmliahedmeklebabdgagipbia">Archive Page</a> adds a button to your toolbar that sends the current URL to archive.today and opens the result in a new tab. You can also right-click on any link to archive or search for it directly. It's simple, uses HTTPS, and doesn't collect data unless you're actively archiving something.</p>
+<p><a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/archivetoday-automator/mmhadhnchpgicjlmlcdfaapkekknnkha">ArchiveToday Automator</a> strips tracking parameters from URLs before sending them to archive.today, which solves the annoying problem where archive.today claims a page doesn't exist just because of some ?kj345d nonsense at the end of the URL. Click the button and it redirects you to the most recent archived version (or lets you create one). Particularly handy if you're working with links from social media or email newsletters.</p>
+<p><a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/singlefile/mpiodijhokgodhhofbcjdecpffjipkle">SingleFile</a> and <a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof">Save Page WE</a> save the entire webpage as a single HTML file on your computer, with all the images, CSS, fonts, everything. You can view it offline and it most of the time looks exactly like the original, although dynamically loaded content (e.g. tweets) can be lost as you scroll up or down.. You can save multiple tabs at once, set up auto-save, and even upload archives to Google Drive or GitHub. If you need high-fidelity local copies and don't want to rely on third-party services, this is your best bet.</p>
+<p>Guillen uses Save Page WE. It’s just one button that you click on your extensions tool bar and automatically downloads the file.</p>
+<h2 id="archiving-videos">Archiving videos</h2>
+<p><strong>Command line archiving with yt-dlp</strong></p>
+<p>Browser extensions are great for webpages, but they struggle with video content. When you need to archive videos from YouTube, TikTok, Instagram, or pretty much any video hosting platform, yt-dlp is your best option. It's a command-line tool, which means no pretty interface, but it's incredibly powerful and works on over 1,700 websites.</p>
+<p><strong>Installation</strong></p>
+<p>The easiest way to get yt-dlp installed depends on your operating system:</p>
+<p><em>Windows</em>: Use <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=U95K4umIQ_4">Chocolatey</a> package manager. Open PowerShell as administrator and run:</p>
+<p>choco install yt-dlp ffmpeg</p>
+<p><em>Mac</em>: Use <a target="_blank" rel="noopener" href="https://brew.sh/">Homebrew</a>. Open Terminal and run:</p>
+<p>brew install yt-dlp ffmpeg</p>
+<p><em>Linux</em>: Most distributions can install directly:</p>
+<p>sudo apt install yt-dlp ffmpeg</p>
+<p>Note that you need both yt-dlp and ffmpeg. The latter handles video/audio conversion and merging.</p>
+<p><strong>Basic usage</strong></p>
+<p>The simplest command downloads the best available quality:</p>
+<p>yt-dlp "https://www.youtube.com/watch?v=VIDEO_ID"</p>
+<p>If you want to see what formats are available before downloading:</p>
+<p>yt-dlp -F "VIDEO_URL"</p>
+<p>This lists all available video and audio streams. You can then download specific formats:</p>
+<p>yt-dlp -f 137+140 "VIDEO_URL"</p>
+<p>For investigations, you'll probably want to grab metadata along with the video. This command downloads the video, thumbnail, and description:</p>
+<p>yt-dlp --write-thumbnail --write-description "VIDEO_URL"</p>
+<p><strong>Downloading from TikTok</strong></p>
+<p>TikTok works out of the box. Just paste the URL:</p>
+<p>yt-dlp "https://www.tiktok.com/@username/video/1234567890"</p>
+<p>You can even point yt-dlp at an entire user profile and it'll download all their videos:</p>
+<p>yt-dlp "https://www.tiktok.com/@username"</p>
+<p><strong>Downloading from Instagram</strong></p>
+<p>Instagram is trickier. Most content (reels, stories, age-restricted posts) requires authentication. If you try without it, you'll get errors about login being required. You need to pass cookies from your browser.</p>
+<p>The easiest method is to let yt-dlp grab cookies directly from Chrome:</p>
+<p>yt-dlp --cookies-from-browser chrome "INSTAGRAM_URL"</p>
+<p><strong>Important</strong>: On Windows, Chrome must be completely closed for this to work. If you get a "Permission denied" error, close all Chrome windows and try again.</p>
+<p>If you prefer Firefox:</p>
+<p>yt-dlp --cookies-from-browser firefox "INSTAGRAM_URL"</p>
+<p><strong>A word of warning about Instagram</strong>: The platform actively fights automated tools. The extractor breaks regularly when Instagram changes things, and there's a risk that using yt-dlp could get your Instagram account flagged or banned. If you're planning to archive a lot of Instagram content for an investigation, consider using one of the forensic tools mentioned earlier—they're built to handle these platform restrictions more robustly.</p>
+<p><strong>Downloading playlists</strong></p>
+<p>yt-dlp handles entire playlists or channels without breaking a sweat:</p>
+<p>yt-dlp "https://www.youtube.com/playlist?list=PLAYLIST_ID"</p>
+<p>If you're archiving a channel that's being updated regularly, use the archive feature to track what you've already downloaded:</p>
+<p>yt-dlp --download-archive archive.txt "CHANNEL_URL"</p>
+<p>This creates a text file that records every video ID you've downloaded. Next time you run the same command, it'll skip videos that are already in the archive.</p>
+<p><strong>Audio extraction</strong></p>
+<p>Sometimes you only need the audio (podcasts, interviews, etc.):</p>
+<p>yt-dlp -x --audio-format mp3 "VIDEO_URL"</p>
+<p><strong>Limitations</strong></p>
+<p>yt-dlp is fantastic for what it does, but it's not forensically robust. It doesn't automatically hash files or provide chain of custody features. If you need that level of documentation, jump ahead to the forensic tools section. For most investigative work, though, yt-dlp combined with good file organization will serve you well.</p>
+<p>The tool is actively maintained and updates frequently to keep up with platform changes. If something breaks, update yt-dlp with yt-dlp -U and try again.</p>
+<p><strong>Where are my downloads?</strong></p>
+<p>That’s a great question! If you’re on a mac, the easiest is to create a new folder somewhere in your investigation main folder, and then right click on it and select “New Terminal at Folder” and run the commands from above there. All your files will be downloaded to that folder.</p>
+<p>On Windows, you can do the same thing: create a folder for your investigation, then shift+right-click inside that folder and select "Open PowerShell window here" (or "Open in Terminal" on Windows 11). Run your yt-dlp commands from there and everything downloads to that folder. On Linux, navigate to your folder in Terminal using cd /path/to/your/folder before running yt-dlp commands.</p>
+<h2 id="forensic-tools">Forensic tools</h2>
+<p>When investigations are high stakes and you need forensically robust archiving practices, there’s no way around using a dedicated tool. Your options here are Hunchly, Ubikron and ForensicOSINT. They are all, unfortunately, paid, although they offer free trials. Hunchly’s lasts for one month while Ubikron and ForensicOSINT limit what you can archive, which is rather annoying. In contrast to the other solutions outlined till now, they won’t have trouble dealing with video or dynamically loaded content.</p>
+<p><a target="_blank" rel="noopener" href="https://hunch.ly/">Hunchly</a> has been for many years the industry standard and if you’re part of the Investigations Lab we may be able to offer you an account while your investigation runs within the lab. It’s a robust tool, so a full explanation of its features would be beyond the scope of this worksheet. You can, however, watch this <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=ghj_uLv24WE">video</a>. The tool is structured around “cases”, and it saves everything that you see in your browser while you browse and the software is set to capture. All the files archived are automatically hashed, which helps with chain of custody (to prove that nothing has been modified after capture). For these reasons, cases get quite big very quickly so you need to be ready to sacrifice a chunk of your hard drive to this hungry archiver.</p>
+<p><a target="_blank" rel="noopener" href="https://www.ubikron.com/">Ubikron</a> is similar to Hunchly in that it is structured around cases and saves all the content as you browse and the tool is set to capture, but it includes a few other interesting features that set it apart. For example, it automatically generates a network graph to show you how people, places and even custom concepts decided by you are connected throughout your investigation, which can lead to unexpected discoveries. However, the tool is more and more a case management system and less an archival tool. The more recent versions also include an AI assistant that, by default, sends data to Ubikron’s servers. This can be avoided, but needs to be manually checked.</p>
+<p><a target="_blank" rel="noopener" href="https://www.forensicosint.com/">ForensicOSINT</a> sits halfway between Hunchly, Ubikron and one of the free single file chrome extensions shared in the previous section. It combines a Case Management System with page capture and archiving. Since it focuses on a law enforcement audience, its archiving features are advertised as court-ready. I have not tested it, but others seem quite happy with it. The trial version is, unfortunately, not robust enough (no court-readiness, so to say…).</p>
+<h2 id="the-hrc-auto-archiver-and-its-bellingcat-big-brother">The HRC Auto Archiver (and its Bellingcat big brother)</h2>
+<p>Being the awesome investigators that they are, Bellingcat has developed a handy tool to automatically archive content during an investigation. Its most interesting feature is that it facilitates team collaboration by coordinating the archiving process through a Google Spreadsheet, where team members can just input the urls of the material they want to archive, and the tool will run archiving sessions autonomously or on command. Its main downside is that it’s a bit difficult to install and operate, since it doesn’t have a graphical user interface and requires you to struggle with the Google Cloud console to create the necessary credentials so the tool can talk to Google Sheets. If you’re brave enough (or desperate enough for archival collaboration), you can find instructions on how to install and operate the tool here.</p>
+<p>If you don’t need collaborative features and would like a graphical user interface for your archiving, you can use a modified version of the Bellingcat Auto Archiver that we have very originally named HRC Auto Archiver. You can find the instructions on how to install it <a target="_blank" rel="noopener" href="https://github.com/kolenyo2099/hrc-archiver">here</a>. Archiving from Instagram, Twitter and YouTube is still a bit complicated since it requires you to import your “cookies”, but it works reasonably well.</p>
+<p><img loading="lazy" src="media/archiving/image5.png" /></p>
+<p><strong>Note:</strong> Using your personal credentials to archive content puts your account at risk of being banned. Always use your research account or sock puppet. If that’s not possible, try to archive in small batches and spread them throughout the day.</p>
+<h2 id="naming-files">Naming files</h2>
+<p>Regardless of whether you’re working alone or with a team, a consistent system for naming your files is part of the investigative infrastructure. Things will feel manageable until you’re a few months into an investigation with 800 files called screenshot321.png, final_reportv3(really-final).docx, importantEvidence3.pdf. The goal of a consistent naming system is predictability: when you or a colleague opens your archive folder, the filename alone should tell you what’s inside, when it was captured, where it fits in your investigation, and whether you’re allowed to share the information inside.</p>
+<p>The standard structure in the Investigations Lab is as follows:</p>
+<p>team acronym file description Actors and/or Scope_CLASSIFICATION</p>
+<p><strong>Team acronym:</strong> A short identifier for your working group. DTD for Digital Threats and Disinformation, DVC for Digital Verification Corps, and so on.</p>
+<p><strong>File description:</strong> What the document actually is. Be specific enough to distinguish it from other files, but keep it concise. Use Investigation Plan rather than plan, Weekly Meeting Notes rather than notes.</p>
+<p><strong>Actors and/or Scope:</strong> If actors and spatial considerations are relevant for your investigation, you may want to add them as extra elements to the file naming system. For example: TCR Transfer Agreement Honduras_INTERNAL.pdf</p>
+<p><strong>Classification:</strong> Either INTERNAL or EXTERNAL. Internal files stay within your team. External files can be shared with partners, subjects, or made public.</p>
+<h2 id="coordinating-collective-archiving">Coordinating collective archiving</h2>
+<p>Few things are more exciting than coordinating a collective research and archiving process through a well structured and carefully crafted spreadsheet. The Investigations Lab (and other labs), have explored multiple project management tools throughout the years, hoping a better mechanism appears for collaboratively storing links to digital content and its descriptions. The mighty Google Spreadsheets remain undefeated so we keep just going back to them, despite good arguments against trusting big tech with our research.</p>
+<p>The spreadsheet fulfills two purposes: keeping track of the material collected and making it unambiguous who archived it (and when/why/whether it can be shared). While each project may require specific fields, here are some columns that are almost required:</p>
+<p><strong>ID:</strong> (this one is actually required). A unique identifier for every item collected. The simplest system is a sequential number prefixed by your team acronym and the year: TCR-2026-001, TCR-2026-002, and so on. The best practice is not to ever delete any item, even if at some point it is judged irrelevant (to avoid messing with the registry). If something becomes redundant, you can add another column (e.g. “Status”) to indicate that.</p>
+<p><strong>Added by:</strong> The name or initials of the person who entered the row. If you return to an item later and it turns out the URL is dead, you increase the chances of being able to recover the content.</p>
+<p><strong>Date added:</strong> The date the row was created (which may be different from the date the content was published). Since investigations are often international, a good practice is to use the ISO format YYY-MM-DD, to avoid the US-Rest of the world confusion.</p>
+<p><strong>Original URL:</strong> The raw, unmodified URL of the digital object that you want to collect. Do not shorten it. If your investigation needs to fit high evidentiary thresholds, you should even keep the parts of the URL that are “unnecessary”. For example, trackers or snippets that show what is the referral site (e.g. source=<a target="_blank" rel="noopener" href="http://chatgpt.com">chatgpt.com</a>).</p>
+<p><strong>Content type:</strong> Or category. Agree on a short list with the rest of your team and stick to it. Something like webpage, video, image, document, etc., or whatever components are relevant to your investigation. Ideally, you also keep a dictionary in which these categories are defined.</p>
+<p><strong>Description:</strong> One or two sentences explaining what the item is. Try to make it useful and informative. For example, don’t write down “Very important!!!”. Instead, something like “Video of police checkpoint in Tegucigalpa, posted by local journalist. Relevant to TCR transfer timeline”.</p>
+<p><strong>Status:</strong> This is another controlled vocabulary just as Content type. Something like <em>pending, archived-online, archived-local, verified, unverified</em>, etc. This column helps you distribute work and organize efforts.</p>
+<p><strong>Notes:</strong> A free-form column for anything that doesn’t fit elsewhere.</p>
+<p><strong>Local filename:</strong> If your team is (as you should) also archiving the content, you should include the filename with the location pointing at the shared drive in which the preserved content lives.</p>
+<p><mark><strong>IMPORTANT:</strong> The spreadsheet is not the archive! Logging items in them does not equal archiving them!</mark></p>
+<h2 id="the-bottom-line">The bottom line</h2>
+<p>If you’re afraid that content that is relevant for your investigation may disappear, it makes sense to double your efforts. Submit it for preservation to the Wayback Machine <em>AND</em> download it to your computer.</p>
+<p>Web archiving is a discipline in its own, and this short guide is only showing you the tip of the iceberg. If it turns out that you’re passionate about preservation, you may find <a target="_blank" rel="noopener" href="https://netpreserve.org/web-archiving/training-materials/">this</a> resource interesting for a thorough, almost academic discussion. <a target="_blank" rel="noopener" href="https://github.com/iipc/awesome-web-archiving">This other resource</a> is a huge collection of archiving tools and methods.</p>
+</main>
+</body>
+</html>
