@@ -22,7 +22,7 @@ PAGE = """<!doctype html>
 <meta name="description" content="{summary}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,400;0,600;0,800;0,900;1,400&family=Azeret+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../style.css">
 </head>
 <body class="reader">
@@ -34,7 +34,7 @@ PAGE = """<!doctype html>
 <nav class="toc" aria-label="Contents">{toc}</nav>
 <main class="doc">
   <p class="kicker">Worksheet · {stage_name} · {version}</p>
-  <h1>{title}</h1>
+  <h1 class="misreg" data-text="{title}">{title}</h1>
 {body}
 </main>
 <div></div>

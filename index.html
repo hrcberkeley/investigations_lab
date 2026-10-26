@@ -7,41 +7,39 @@
 <meta name="description" content="Worksheets and open tools from ten years of the Human Rights Center Investigations Lab at UC Berkeley, shared so other labs can start their own.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800;900&family=Azeret+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%231d1a18'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%23c8102e'/%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=Space+Mono:wght@400;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23f1ebdf'/%3E%3Ccircle cx='17' cy='17' r='8' fill='%23c8102e'/%3E%3Ccircle cx='15' cy='15' r='8' fill='none' stroke='%231f1c1a' stroke-width='2.5'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<section class="hero" id="hero">
-  <div class="copy">
-    <p class="years" aria-label="2016 to 2026">2016–2026</p>
-    <h1>Investigations Lab</h1>
-    <p class="tagline">Ten years of looking carefully</p>
+<header class="cover" id="hero">
+  <div class="masthead"><span>Human Rights Center · UC Berkeley School of Law</span><span>2016–2026</span></div>
+  <div class="field-wrap"><canvas id="field" aria-hidden="true"></canvas></div>
+  <h1 class="misreg" data-text="Investigations Lab">Investigations Lab</h1>
+  <div class="cover-foot">
+    <p class="tagline">Ten years of looking carefully
+      <svg class="draw" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M2 9 C 30 3, 62 12, 96 7 S 160 4, 198 9"/></svg></p>
     <p class="lede">The worksheets and open tools we've developed at the Human Rights Center over a decade of investigations, shared so that other labs can build on them and start their own.</p>
-    <div class="ctas">
-      <a class="btn primary" href="#kit">Explore the kit</a>
-      <a class="btn ghost" href="#investigations">See the investigations</a>
-    </div>
+    <nav aria-label="On this page"><a class="ink-link" href="#kit">Explore the kit</a><a class="ink-link" href="#investigations">See the investigations</a></nav>
   </div>
-</section>
+</header>
 
 <main>
-  <section class="intro" id="kit">
-    <p class="kicker">The kit</p>
-    <h2>Six stages of an investigation, with a method and tools for each.</h2>
-    <p>Each stage brings together the worksheets we use to teach the method in the Lab and the tools we've built along the way to make the work a little easier.</p>
-    <div class="trio">
-      <div><h3>Local processing</h3><p>Where possible, the tools run entirely in your browser, so whatever you load into them stays on your own device. This matters for sensitive material, unreliable connections and contexts where surveillance is a concern.</p></div>
-      <div><h3>Clear interfaces</h3><p>Graphical interfaces with guidance on what each feature does, so you don't have to know how to program.</p></div>
-      <div><h3>Little or no installation</h3><p>Most tools open straight in the browser, and the rest install in a single step, so nobody has to manage dependencies or programming environments to use them.</p></div>
-    </div>
+  <section class="intro" id="kit" aria-labelledby="kit-h">
+    <h2 id="kit-h">Six stages of an investigation, with a method and tools for each.</h2>
+    <p class="big">Each stage brings together the worksheets we use to teach the method in the Lab and the tools we've built along the way to make the work a little easier.</p>
+    <ol class="rules">
+      <li><b>i.</b><h3>Local processing</h3><p>Where possible, the tools run entirely in your browser, so whatever you load into them stays on your own device. This matters for sensitive material, unreliable connections and contexts where surveillance is a concern.</p></li>
+      <li><b>ii.</b><h3>Clear interfaces</h3><p>Graphical interfaces with guidance on what each feature does, so you don't have to know how to program.</p></li>
+      <li><b>iii.</b><h3>Little or no installation</h3><p>Most tools open straight in the browser, and the rest install in a single step, so nobody has to manage dependencies or programming environments to use them.</p></li>
+    </ol>
     <p class="note">The tools are prototypes. They work, but treat them as demonstrations of what current technology makes possible, and check their results.</p>
   </section>
 
-  <section class="overview" aria-labelledby="overview-h">
-    <h2 id="overview-h" class="kicker">Everything in the kit</h2>
-    <p class="path-note">If your lab is just starting out, the numbered worksheets are a good place to begin. Read in that order, they follow one investigation from its first question to a verified piece of evidence.</p>
-    <ol class="map"></ol>
+  <section class="contents" aria-labelledby="contents-h">
+    <h2 id="contents-h">Contents</h2>
+    <p class="path-note">If your lab is just starting out, the circled worksheets are a good place to begin. Read in that order, they follow one investigation from its first question to a verified piece of evidence.</p>
+    <ol class="toc-list"></ol>
   </section>
 
   <div class="kit-body">
@@ -50,7 +48,6 @@
   </div>
 
   <section class="investigations" id="investigations" aria-labelledby="inv-h">
-    <p class="kicker">The work</p>
     <h2 id="inv-h">Ten years of investigations</h2>
     <p>The projects the Lab has published, year by year, each linked to its page at the Human Rights Center.</p>
     <div class="timeline"></div>
