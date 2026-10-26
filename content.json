@@ -274,6 +274,7 @@
       "kind": "extension",
       "name": "Canary",
       "summary": "Collects GDELT, Google News, Media Cloud, X, Bluesky and Telegram results in the background into an inbox you triage, tag and export.",
+      "store": "https://chromewebstore.google.com/detail/canary/pkkcfnnmfifdcgmmeedmocaddmaflnoc",
       "source": "https://github.com/kolenyo2099/canary-lite"
     },
     {

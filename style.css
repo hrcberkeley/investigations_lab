@@ -1,8 +1,9 @@
 :root {
-  /* HRC red and white, with Berkeley blue for the dark grounds */
-  --ink: #0f1a2e; --ink-2: #33405a; --paper: #ffffff; --card: #ffffff; --line: #e1e5ec; --wash: #f4f6f9;
-  --night: #001a47; --soft: #c3cde0; --muted: #66728a; --red: #c8102e; --red-light: #ff5c6c;
+  /* HRC red on warm paper, with a deep green-black for the dark grounds */
+  --ink: #1c1d1f; --ink-2: #45474b; --paper: #f7f4ee; --card: #fffdf9; --line: #e3ddd2; --wash: #eee8dd;
+  --night: #10201e; --night-2: #1b302d; --soft: #b8c4bf; --muted: #7b7a76; --red: #c8102e; --red-light: #ff6a5c;
   --mono: "Azeret Mono", ui-monospace, monospace; --sans: "Public Sans", system-ui, sans-serif;
+  --serif: "Newsreader", Georgia, serif;
   --gutter: clamp(16px, 5vw, 64px);
 }
 * { box-sizing: border-box; }
@@ -66,21 +67,41 @@ main > section, .stage { padding-inline: var(--gutter); }
   margin: 0 0 14px; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
 .cards { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); }
 
-/* cards: a faint lantern follows the pointer across them */
-.card { --mx: 50%; --my: -200px; position: relative; display: flex; flex-direction: column; gap: 8px; padding: 20px;
-  border-radius: 14px; border: 1px solid var(--line);
-  background: radial-gradient(260px circle at var(--mx) var(--my), rgba(0, 38, 118, 0.06), transparent 70%), var(--card);
-  transition: border-color 0.2s, transform 0.2s; }
-.card:hover { border-color: #b9c2d2; transform: translateY(-2px); }
+.card { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 20px; transition: transform 0.2s, box-shadow 0.2s; }
+.card:hover { transform: translateY(-2px); }
 .card .meta { font: 600 0.7rem/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
 .card h4 { font-size: 1.15rem; line-height: 1.25; margin: 0; letter-spacing: -0.01em; }
 .card p { margin: 0; color: var(--ink-2); font-size: 0.96rem; }
 .card .acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 8px; }
 .act { font: 600 0.85rem/1 var(--sans); padding: 10px 14px; border-radius: 999px; text-decoration: none;
-  box-shadow: inset 0 0 0 1px var(--line); background: #fff; color: var(--ink); }
+  box-shadow: inset 0 0 0 1px var(--line); background: var(--card); color: var(--ink); }
 .act:hover { box-shadow: inset 0 0 0 1px var(--ink); }
 .act.primary { background: var(--ink); color: var(--paper); box-shadow: none; }
 .act.primary:hover { background: var(--ink-2); }
+
+/* worksheets are printed pages: square corners, a folded corner, a serif title */
+.sheet { padding: 24px 22px 20px; border-radius: 3px; background: var(--card); border: 1px solid var(--line);
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%); }
+/* the clip cuts off the cards' own shadows, so the column casts them */
+.cards:has(> .sheet) { filter: drop-shadow(0 8px 12px rgba(40, 30, 10, 0.1)); }
+.sheet::after { content: ""; position: absolute; top: -1px; right: -1px; width: 23px; height: 23px;
+  background: linear-gradient(225deg, transparent 50%, var(--wash) 50%); box-shadow: -1px 1px 0 var(--line); }
+.sheet:hover { border-color: #cfc6b6; }
+.sheet .meta { color: var(--red); }
+.sheet h4 { font: 600 1.4rem/1.15 var(--serif); letter-spacing: -0.005em; }
+
+/* tools are screens: dark tiles, and a faint lantern follows the pointer across them */
+.tool { --mx: 50%; --my: -200px; border-radius: 14px; color: var(--paper);
+  background: radial-gradient(240px circle at var(--mx) var(--my), rgba(255, 106, 92, 0.16), transparent 70%), var(--night); }
+.tool:hover { box-shadow: 0 16px 30px -20px rgba(16, 32, 30, 0.8); }
+.tool .meta { display: flex; align-items: center; gap: 8px; color: var(--soft); }
+.tool .meta::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--red-light); box-shadow: 0 0 8px var(--red-light); }
+.tool h4 { font-size: 1.2rem; }
+.tool p { color: var(--soft); }
+.tool .act { background: transparent; color: var(--paper); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
+.tool .act:hover { box-shadow: inset 0 0 0 1px var(--paper); }
+.tool .act.primary { background: var(--paper); color: var(--ink); box-shadow: none; }
+.tool .act.primary:hover { background: #fff; }
 
 /* ---------- principles ---------- */
 .principles { background: var(--night); color: var(--paper); padding-block: clamp(56px, 8vw, 100px); }
@@ -112,7 +133,7 @@ main > section, .stage { padding-inline: var(--gutter); }
   font-weight: 600; font-size: 0.92rem; }
 .doc-bar a { text-decoration: none; } .doc-bar a:hover { color: var(--red); }
 .doc { max-width: 44rem; margin: 0 auto; padding: clamp(40px, 7vw, 88px) 16px 96px; font-size: 1.06rem; line-height: 1.65; color: var(--ink-2); }
-.doc > h1 { font-size: clamp(2.2rem, 5vw, 3.4rem); line-height: 1.05; letter-spacing: -0.03em; color: var(--ink); margin: 0 0 1.2em; }
+.doc > h1 { font: 600 clamp(2.4rem, 5.4vw, 3.6rem)/1.05 var(--serif); letter-spacing: -0.015em; color: var(--ink); margin: 0 0 1.2em; }
 .doc h2, .doc h3, .doc h4, .doc h5 { color: var(--ink); line-height: 1.2; letter-spacing: -0.01em; margin: 2em 0 0.5em; }
 .doc h2 { font-size: 1.8rem; } .doc h3 { font-size: 1.4rem; } .doc h4 { font-size: 1.15rem; } .doc h5 { font-size: 1rem; }
 .doc a { color: var(--red); text-underline-offset: 2px; }

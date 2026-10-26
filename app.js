@@ -18,9 +18,10 @@ const sheet = (w) => `
 const tool = (t) => {
   const acts = [];
   if (t.launch) acts.push(`<a class="act primary" href="${encodeURI(TOOLS_DIR + t.launch)}" target="_blank" rel="noopener">Open tool</a>`);
-  if (t.source) acts.push(`<a class="act${t.launch ? "" : " primary"}" href="${t.source}" target="_blank" rel="noopener">${t.launch ? "Code" : "Get it"} on GitHub</a>`);
+  if (t.store) acts.push(`<a class="act primary" href="${t.store}" target="_blank" rel="noopener">Add to Chrome</a>`);
+  if (t.source) acts.push(`<a class="act${acts.length ? "" : " primary"}" href="${t.source}" target="_blank" rel="noopener">${acts.length ? "Code" : "Get it"} on GitHub</a>`);
   return `
-  <article class="card" id="tool-${t.id}">
+  <article class="card tool" id="tool-${t.id}">
     <p class="meta">${KIND[t.kind]}</p>
     <h4>${esc(t.name)}</h4>
     <p>${esc(t.summary)}</p>
@@ -61,31 +62,33 @@ const spy = new IntersectionObserver((entries) => {
 }, { rootMargin: "-45% 0px -50% 0px" });
 document.querySelectorAll(".stage").forEach((s) => spy.observe(s));
 
-// a faint lantern follows the pointer across the cards
+// a faint lantern follows the pointer across the tools
 addEventListener("pointermove", (e) => {
-  const card = e.target.closest?.(".card");
+  const card = e.target.closest?.(".tool");
   if (!card) return;
   const r = card.getBoundingClientRect();
   card.style.setProperty("--mx", `${e.clientX - r.left}px`);
   card.style.setProperty("--my", `${e.clientY - r.top}px`);
 });
 document.addEventListener("pointerout", (e) => {
-  const card = e.target.closest?.(".card");
+  const card = e.target.closest?.(".tool");
   if (card && !card.contains(e.relatedTarget)) card.style.setProperty("--my", "-200px");
 });
 
 // ---------- Lantern hero ----------
 // The field is set with faint text: the Lab's investigations hidden among the noise of an investigation
-// (timestamps, file names, coordinates, links). A soft light follows the pointer and brings it up; the
-// investigations come up in colour and open their project page. It opens with a flare that lights the whole
-// field for a moment, then closes down to the lantern. With nobody pointing, the light wanders on its own.
+// (timestamps, file names, coordinates, links), drifting past in rows like feeds. A soft light follows the
+// pointer: the noise parts around it, the rows slow down under it, and the investigations come up in colour
+// and open their project page. A click sends a pulse across the field that lights everything it passes.
+// It opens with one such pulse from the centre; with nobody pointing, the light wanders and pulses on its own.
 const hero = document.getElementById("hero"), copy = hero.querySelector(".copy");
-const C = { ink: "#001a47", paper: "#ffffff", signal: "#ff5c6c" };
+const css = getComputedStyle(document.documentElement), v = (n) => css.getPropertyValue(n).trim();
+const C = { ground: v("--night"), paper: v("--paper"), signal: v("--red-light") };
 const items = content.investigations;
 const noise = ["IMG_4471.jpg", "2019-03-14 08:22", "33.5138° N", "t.me/…/1182", "frame 0412", "archive.today/…", "VID_20210611.mp4",
   "sha256 9f2c…", "before:2024-06-01", "site:gov filetype:pdf", "EXIF: none", "44.0812° E", "@account_77", "web.archive.org/…",
   "UTC+3", "shadow 41°", "/r/…/comments", "dup? 0.93", "lang: ckb", "post deleted", "doc_0031.pdf", "geo: unverified"];
-const ITEM_FONT = `600 13px "Azeret Mono", monospace`, NOISE_FONT = `400 12px "Azeret Mono", monospace`;
+const ITEM_FONT = `600 13px "Azeret Mono", monospace`, NOISE_FONT = `400 12px "Azeret Mono", monospace`, ROW = 30;
 
 const canvas = document.createElement("canvas");
 canvas.setAttribute("aria-hidden", "true");
@@ -93,89 +96,104 @@ hero.prepend(canvas);
 const ctx = canvas.getContext("2d");
 const p = { x: -1e4, y: -1e4, over: false };
 const light = { x: 0, y: 0 };
-let W = 0, H = 0, R0 = 150, cells = [], hot = null, lastSeen = -1e4, t0 = null, visible = false, queued = false;
+const waves = [];
+let W = 0, H = 0, R = 150, rows = [], box = null, hot = null, lastSeen = -1e4, last = null, nextPing = 0;
+let visible = false, queued = false, opened = false;
 
+const pulse = (x, y, reach = Math.hypot(W, H) * 0.6) => waves.push({ x, y, r: 0, reach });
+const width = (c) => { ctx.font = c.item ? ITEM_FONT : NOISE_FONT; return ctx.measureText(c.text).width; };
+
+// each row is a strip a little wider than the hero that loops as it drifts; investigations are dealt out
+// across the rows and dropped in among the noise at random
 function layout() {
   const hr = hero.getBoundingClientRect(), cr = copy.getBoundingClientRect();
-  const pad = 28, box = { l: cr.left - hr.left - pad, r: cr.right - hr.left + pad, t: cr.top - hr.top - pad, b: cr.bottom - hr.top + pad };
-  // first pass: where tokens can go, row by row, stepping around the copy
-  const slots = [];
-  for (let y = 22, r = 0; y < H - 10; y += 30, r++) {
-    let x = 10 + ((r * 53) % 90);
-    while (x < W - 60) {
-      if (y > box.t && y < box.b && x + 120 > box.l && x < box.r) { x = box.r; continue; }
-      slots.push({ x, y, r });
-      x += 150 + ((slots.length * 37) % 60);
+  box = { l: cr.left - hr.left - 24, r: cr.right - hr.left + 24, t: cr.top - hr.top - 16, b: cr.bottom - hr.top + 16 };
+  const n = Math.max(1, Math.floor((H - 12) / ROW));
+  rows = Array.from({ length: n }, (_, r) => ({ y: 22 + r * ROW, off: Math.random() * 600, v: (r % 2 ? -1 : 1) * (6 + Math.random() * 10), cells: [] }));
+  [...items].sort(() => Math.random() - 0.5).forEach((it, i) => {
+    const text = it.title.length > 56 ? it.title.slice(0, 54).trimEnd() + "…" : it.title;
+    rows[i % n].cells.push({ text, item: it });
+  });
+  rows.forEach((row, r) => {
+    let len = row.cells.reduce((a, c) => a + (c.w = width(c)) + 80, 0);
+    for (let k = r * 5; len < W + 320; k++) {
+      const c = { text: noise[k % noise.length] };
+      row.cells.splice(Math.floor(Math.random() * (row.cells.length + 1)), 0, c);
+      len += (c.w = width(c)) + 80;
     }
-  }
-  // second pass: lay tokens on those rows; investigations take slots at a rate that spreads them over the field
-  const queue = [...items].sort(() => Math.random() - 0.5);
-  cells = [];
-  let left = slots.length;
-  for (let r = 0, k = 0; k < slots.length; r++) {
-    let x = -Infinity;
-    for (const s of slots.filter((s) => s.r === r)) {
-      k++; left--;
-      const sx = Math.max(s.x, x);
-      const room = (s.y > box.t && s.y < box.b && sx < box.l ? box.l : W - 10) - sx;
-      if (room < 60) continue;
-      let c;
-      if (queue.length && room >= 160 && Math.random() < queue.length / (left + 1)) {
-        const it = queue.shift();
-        ctx.font = ITEM_FONT;
-        let label = it.title;
-        while (ctx.measureText(label).width > room && label.length > 12) label = label.slice(0, -2).trimEnd() + "…";
-        c = { x: sx, y: s.y, w: ctx.measureText(label).width, text: label, item: it };
-      } else {
-        ctx.font = NOISE_FONT;
-        const text = noise[(r * 7 + k * 3) % noise.length];
-        c = { x: sx, y: s.y, w: ctx.measureText(text).width, text };
-        if (c.w > room) continue;
-      }
-      cells.push(c);
-      x = c.x + c.w + 40;
-    }
-  }
+    let x = 0;
+    for (const c of row.cells) { c.x = x; x += c.w + 48 + Math.random() * 64; }
+    row.L = x;
+  });
+}
+
+// 0 where a token would sit under the copy, rising to 1 a little way out from it
+function clear(x, w, y) {
+  const dx = Math.max(box.l - x - w, 0, x - box.r), dy = Math.max(box.t - y, 0, y - box.b);
+  return Math.min(1, Math.hypot(dx, dy) / 60);
 }
 
 function frame(t) {
   queued = false;
-  t0 ??= t;
+  const dt = last == null ? 0 : Math.min(50, t - last);
+  last = t;
   if (p.over) lastSeen = t;
-  const auto = t - lastSeen > 1500 || still;
+  const auto = still || t - lastSeen > 1500;
   // wander a loop around the copy, so the light keeps finding things
-  const tx = auto ? W * (0.5 + 0.38 * Math.cos(t * 0.00019)) : p.x;
-  const ty = auto ? H * (0.5 + 0.36 * Math.sin(t * 0.00031)) : p.y;
-  light.x += (tx - light.x) * (auto ? 0.03 : 0.16);
-  light.y += (ty - light.y) * (auto ? 0.03 : 0.16);
-  // the opening flare: the whole field lit, then closing to the lantern
-  const flare = still ? 0 : Math.max(0, 1 - (t - t0) / 2200) ** 2;
-  R0 = Math.min(300, Math.max(150, W * 0.22));
-  const R = R0 * (1 + flare * 5);
-  const fx = light.x + (W / 2 - light.x) * flare, fy = light.y + (H / 2 - light.y) * flare;
+  const tx = auto ? W * (0.5 + 0.4 * Math.cos(t * 0.00019)) : p.x;
+  const ty = auto ? H * (0.5 + 0.38 * Math.sin(t * 0.00031)) : p.y;
+  light.x += (tx - light.x) * (auto ? 0.03 : 0.18);
+  light.y += (ty - light.y) * (auto ? 0.03 : 0.18);
+  R = Math.min(280, Math.max(140, W * 0.2));
+  if (!still && auto && t > nextPing) { pulse(light.x, light.y, R * 3); nextPing = t + 5200; }
+  for (const wv of waves) wv.r += dt * 0.45;
+  while (waves.length && waves[0].r > waves[0].reach) waves.shift();
 
-  ctx.globalAlpha = 1; ctx.fillStyle = C.ink; ctx.fillRect(0, 0, W, H);
-  const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, R * 1.3);
-  g.addColorStop(0, "rgba(120,160,255,0.10)"); g.addColorStop(1, "rgba(120,160,255,0)");
+  ctx.globalAlpha = 1; ctx.fillStyle = C.ground; ctx.fillRect(0, 0, W, H);
+  const g = ctx.createRadialGradient(light.x, light.y, 0, light.x, light.y, R * 1.6);
+  g.addColorStop(0, "rgba(255,190,160,0.10)"); g.addColorStop(1, "rgba(255,190,160,0)");
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = C.paper; ctx.lineWidth = 1;
+  for (const wv of waves) {
+    ctx.globalAlpha = 0.12 * (1 - wv.r / wv.reach);
+    ctx.beginPath(); ctx.arc(wv.x, wv.y, wv.r, 0, 7); ctx.stroke();
+  }
 
   ctx.textBaseline = "middle";
   hot = null;
-  for (const c of cells) {
-    const d = Math.hypot(c.x + Math.min(c.w, 200) / 2 - fx, c.y - fy), lit = Math.max(0, 1 - d / R) ** 1.5;
-    if (c.item) {
-      const over = !auto && flare < 0.1 && p.x > c.x && p.x < c.x + c.w && Math.abs(p.y - c.y) < 11 && lit > 0.15;
-      if (over) hot = c;
-      ctx.font = ITEM_FONT;
-      ctx.globalAlpha = 0.1 + lit * 0.9;
-      ctx.fillStyle = lit > 0.05 ? C.signal : C.paper;
-      ctx.fillText(c.text, c.x, c.y);
-      if (over) ctx.fillRect(c.x, c.y + 10, c.w, 1.5);
-    } else {
-      ctx.font = NOISE_FONT;
-      ctx.globalAlpha = 0.05 + lit * 0.35;
-      ctx.fillStyle = C.paper;
-      ctx.fillText(c.text, c.x, c.y);
+  for (const row of rows) {
+    // rows nearly stop under the light, so what it finds can be read and clicked
+    const near = Math.exp(-((row.y - light.y) ** 2) / (R * R * 0.3));
+    if (!still) row.off += (row.v * dt / 1000) * (1 - 0.94 * near);
+    for (const c of row.cells) {
+      const x = (((c.x + row.off) % row.L) + row.L) % row.L - 160;
+      c.sx = -1e4;
+      if (x > W || x + c.w < 0) continue;
+      const cx = x + Math.min(c.w, 200) / 2, dy = row.y - light.y, d = Math.hypot(cx - light.x, dy);
+      let lit = Math.max(0, 1 - d / R) ** 1.5;
+      for (const wv of waves) {
+        const off = Math.abs(Math.hypot(cx - wv.x, row.y - wv.y) - wv.r);
+        if (off < 50) lit = Math.max(lit, (1 - off / 50) * (1 - wv.r / wv.reach) * 0.9);
+      }
+      // the noise parts around the light; the investigations hold still in it
+      const y = c.item ? row.y : row.y + Math.sign(dy || 1) * 18 * Math.exp(-(d * d) / 9000);
+      const m = clear(x, c.w, y);
+      if (m === 0) continue;
+      c.sx = x; c.sy = y;
+      if (c.item) {
+        const over = !auto && m > 0.6 && p.x > x && p.x < x + c.w && Math.abs(p.y - y) < 11 && lit > 0.15;
+        if (over) hot = c;
+        ctx.font = ITEM_FONT;
+        ctx.globalAlpha = (0.12 + lit * 0.88) * m;
+        ctx.fillStyle = lit > 0.05 ? C.signal : C.paper;
+        ctx.fillText(c.text, x, y);
+        if (over) ctx.fillRect(x, y + 10, c.w, 1.5);
+      } else {
+        ctx.font = NOISE_FONT;
+        ctx.globalAlpha = (0.06 + lit * 0.34) * m;
+        ctx.fillStyle = C.paper;
+        ctx.fillText(c.text, x, y);
+      }
     }
   }
   canvas.style.cursor = hot ? "pointer" : "";
@@ -189,17 +207,20 @@ new ResizeObserver(() => {
   W = r.width; H = r.height; canvas.width = W * d; canvas.height = H * d;
   ctx.setTransform(d, 0, 0, d, 0, 0);
   light.x = W / 2; light.y = H / 2;
-  layout(); schedule();
+  layout();
+  if (!opened && !still) { opened = true; pulse(W / 2, H / 2); nextPing = performance.now() + 4000; }
+  schedule();
 }).observe(canvas);
 new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) schedule(); }).observe(canvas);
 addEventListener("pointermove", (e) => {
   const r = canvas.getBoundingClientRect();
   p.x = e.clientX - r.left; p.y = e.clientY - r.top; p.over = p.y >= 0 && p.y <= r.height;
 });
-// a click opens an investigation only where the light already is; elsewhere (and on touch) it brings the light there
+// a click opens an investigation only where the light already is; elsewhere (and on touch) it brings the
+// light there and sends a pulse out from it
 canvas.addEventListener("click", (e) => {
   const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-  const c = cells.find((c) => c.item && x > c.x && x < c.x + c.w && Math.abs(y - c.y) < 11);
-  if (c && Math.hypot(x - light.x, y - light.y) < R0 * 0.6) window.open(c.item.url, "_blank", "noopener");
-  else { p.x = x; p.y = y; p.over = true; schedule(); }
+  const c = rows.flatMap((row) => row.cells).find((c) => c.item && x > c.sx && x < c.sx + c.w && Math.abs(y - c.sy) < 11);
+  if (c && Math.hypot(x - light.x, y - light.y) < R * 0.6) window.open(c.item.url, "_blank", "noopener");
+  else { p.x = x; p.y = y; p.over = true; if (!still) pulse(x, y); schedule(); }
 });
