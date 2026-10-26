@@ -30,11 +30,16 @@ PAGE = """<!doctype html>
   <a href="../#{stage}">← Investigations Lab</a>
   <a href="{id}.docx" download>Download .docx</a>
 </header>
+<div class="reader-wrap">
+<nav class="toc" aria-label="Contents">{toc}</nav>
 <main class="doc">
   <p class="kicker">Worksheet · {stage_name} · {version}</p>
   <h1>{title}</h1>
 {body}
 </main>
+<div></div>
+</div>
+<footer class="doc-end">{end}</footer>
 </body>
 </html>
 """
@@ -58,6 +63,41 @@ def clean(body, title):
     return body.strip()
 
 
+def headings(body):
+    # a paragraph that is only bold text is a section title in the Word file: make it a heading, with an id
+    def promote(m):
+        text = m.group(1).strip()
+        if text.endswith((":", ".", "…")) or len(text) > 90:
+            return m.group(0)
+        return f'<h3 id="{slug(text)}">{text}</h3>'
+    return re.sub(r"<p><strong>([^<]{1,90})</strong></p>", promote, body)
+
+
+def slug(text):
+    return re.sub(r"[^a-z0-9]+", "-", html.unescape(text).lower()).strip("-")
+
+
+def toc(body):
+    items = re.findall(r'<h([23]) id="([^"]+)"[^>]*>(.*?)</h\1>', body, flags=re.S)
+    if len(items) < 3:
+        return ""
+    lis = "".join(f'<li{" class=sub" if lvl == "3" else ""}><a href="#{i}">{re.sub(r"<[^>]+>", "", t)}</a></li>' for lvl, i, t in items)
+    return f"<p>Contents</p><ol>{lis}</ol>"
+
+
+def end(w):
+    # where to go from here: the next worksheet, the tools that go with this one, and back to its stage
+    tools = {t["id"]: t["name"] for t in content["tools"]}
+    nxt = sheets[sheets.index(w) + 1] if w is not sheets[-1] else None
+    parts = []
+    if nxt:
+        parts.append(f'<div class="next"><p>Next worksheet</p><a href="{nxt["id"]}.html">{html.escape(nxt["title"])}</a></div>')
+    if w.get("tools"):
+        parts.append("<div><p>Tools for this</p>" + "".join(f'<a href="../#tool-{t}">{html.escape(tools[t])}</a>' for t in w["tools"]) + "</div>")
+    parts.append(f'<div><p>Back to</p><a href="../#{w["stage"]}">{stages[w["stage"]]}</a><a href="{w["id"]}.docx" download>Download .docx</a></div>')
+    return "".join(parts)
+
+
 def similar(tag, title):
     words = lambda s: set(re.findall(r"[a-z]+", html.unescape(re.sub(r"<[^>]+>", "", s)).lower())) - {"a", "the", "to", "for", "from"}
     a, b = words(tag), words(title)
@@ -74,7 +114,8 @@ for w in sheets:
         for f in (HERE / "media" / w["id"] / "media").iterdir():
             f.rename(f.parent.parent / f.name)
         (HERE / "media" / w["id"] / "media").rmdir()
-    (HERE / f"{w['id']}.html").write_text(PAGE.format(
+    body = headings(clean(body, w["title"]))
+    (HERE / f"{w['id']}.html").write_text(PAGE.format(toc=toc(body), end=end(w),
         id=w["id"], title=html.escape(w["title"]), summary=html.escape(w["summary"]), version=html.escape(w["version"]),
-        stage=w["stage"], stage_name=stages[w["stage"]], body=clean(body, w["title"])))
+        stage=w["stage"], stage_name=stages[w["stage"]], body=body))
     print("built", w["id"])

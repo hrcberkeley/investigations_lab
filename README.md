@@ -29,9 +29,9 @@ The Chrome extensions and desktop apps (Sidekick, Canary, Save to Sheets, HRC Ar
 
 Add an entry to `content.json` and reload the page. Nothing else needs to change.
 
-- **Worksheet:** `id`, `stage`, `title`, `version`, `summary`, and `file` (`sheets/<id>.docx`). Then run `python3 sheets/build.py` to make its page.
-- **Tool:** `id`, `stage`, `kind` (`browser`, `extension` or `desktop`), `name`, `summary`, and `launch` (path under `tools/`), `source` (a repository URL), or both.
-- **Investigation:** `title` and `url`.
+- **Worksheet:** `id`, `stage`, `title`, `version`, `summary`, and `file` (`sheets/<id>.docx`). Optionally `tools` (ids of the tools that go with it, linked both ways) and `step` (its place in the suggested starting path). Then run `python3 sheets/build.py` to make its page.
+- **Tool:** `id`, `stage`, `kind` (`browser`, `extension` or `desktop`), `name`, `summary`, and at least one of `launch` (path under `tools/`), `store` (a Chrome Web Store URL) and `source` (a repository URL). Optionally `image` (a screenshot, usually `images/tools/<id>.jpg`, 16:10) and `needs` (what it downloads or requires).
+- **Investigation:** `title`, `url` and `year`.
 
 `stage` is one of the `id`s in `stages`.
 

@@ -15,10 +15,12 @@
   <a href="../#preserve">← Investigations Lab</a>
   <a href="archiving.docx" download>Download .docx</a>
 </header>
+<div class="reader-wrap">
+<nav class="toc" aria-label="Contents"><p>Contents</p><ol><li class=sub><a href="#pre-requisites">Pre-requisites</a></li><li><a href="#introduction">Introduction</a></li><li><a href="#the-very-basic">The very basic</a></li><li><a href="#archiving-via-a-third-party">Archiving via a third party</a></li><li class=sub><a href="#the-internet-archive">2.1 The Internet Archive</a></li><li><a href="#archiving-with-browser-extensions">Archiving with browser extensions</a></li><li><a href="#archiving-videos">Archiving videos</a></li><li class=sub><a href="#command-line-archiving-with-yt-dlp">Command line archiving with yt-dlp</a></li><li class=sub><a href="#installation">Installation</a></li><li class=sub><a href="#basic-usage">Basic usage</a></li><li class=sub><a href="#downloading-playlists">Downloading playlists</a></li><li class=sub><a href="#audio-extraction">Audio extraction</a></li><li class=sub><a href="#where-are-my-downloads">Where are my downloads?</a></li><li><a href="#forensic-tools">Forensic tools</a></li><li><a href="#the-hrc-auto-archiver-and-its-bellingcat-big-brother">The HRC Auto Archiver (and its Bellingcat big brother)</a></li><li><a href="#naming-files">Naming files</a></li><li><a href="#coordinating-collective-archiving">Coordinating collective archiving</a></li><li><a href="#the-bottom-line">The bottom line</a></li></ol></nav>
 <main class="doc">
   <p class="kicker">Worksheet · Preserve · February 2026</p>
   <h1>Archiving Basics</h1>
-<p><strong>Pre-requisites</strong></p>
+<h3 id="pre-requisites">Pre-requisites</h3>
 <ul>
 <li><p>Install a Chromium-based browser. It can be <a target="_blank" rel="noopener" href="https://www.google.com/chrome/">Chrome</a>, <a target="_blank" rel="noopener" href="https://brave.com/download/">Brave</a>, <a target="_blank" rel="noopener" href="https://arc.net/">Arc</a>, etc. <strong>This is not an endorsement!</strong></p></li>
 </ul>
@@ -64,9 +66,9 @@
 <p><a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/singlefile/mpiodijhokgodhhofbcjdecpffjipkle">SingleFile</a> and <a target="_blank" rel="noopener" href="https://chromewebstore.google.com/detail/save-page-we/dhhpefjklgkmgeafimnjhojgjamoafof">Save Page WE</a> save the entire webpage as a single HTML file on your computer, with all the images, CSS, fonts, everything. You can view it offline and it most of the time looks exactly like the original, although dynamically loaded content (e.g. tweets) can be lost as you scroll up or down.. You can save multiple tabs at once, set up auto-save, and even upload archives to Google Drive or GitHub. If you need high-fidelity local copies and don't want to rely on third-party services, this is your best bet.</p>
 <p>Guillen uses Save Page WE. It’s just one button that you click on your extensions tool bar and automatically downloads the file.</p>
 <h2 id="archiving-videos">Archiving videos</h2>
-<p><strong>Command line archiving with yt-dlp</strong></p>
+<h3 id="command-line-archiving-with-yt-dlp">Command line archiving with yt-dlp</h3>
 <p>Browser extensions are great for webpages, but they struggle with video content. When you need to archive videos from YouTube, TikTok, Instagram, or pretty much any video hosting platform, yt-dlp is your best option. It's a command-line tool, which means no pretty interface, but it's incredibly powerful and works on over 1,700 websites.</p>
-<p><strong>Installation</strong></p>
+<h3 id="installation">Installation</h3>
 <p>The easiest way to get yt-dlp installed depends on your operating system:</p>
 <p><em>Windows</em>: Use <a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=U95K4umIQ_4">Chocolatey</a> package manager. Open PowerShell as administrator and run:</p>
 <p>choco install yt-dlp ffmpeg</p>
@@ -75,7 +77,7 @@
 <p><em>Linux</em>: Most distributions can install directly:</p>
 <p>sudo apt install yt-dlp ffmpeg</p>
 <p>Note that you need both yt-dlp and ffmpeg. The latter handles video/audio conversion and merging.</p>
-<p><strong>Basic usage</strong></p>
+<h3 id="basic-usage">Basic usage</h3>
 <p>The simplest command downloads the best available quality:</p>
 <p>yt-dlp "https://www.youtube.com/watch?v=VIDEO_ID"</p>
 <p>If you want to see what formats are available before downloading:</p>
@@ -97,19 +99,19 @@
 <p>If you prefer Firefox:</p>
 <p>yt-dlp --cookies-from-browser firefox "INSTAGRAM_URL"</p>
 <p><strong>A word of warning about Instagram</strong>: The platform actively fights automated tools. The extractor breaks regularly when Instagram changes things, and there's a risk that using yt-dlp could get your Instagram account flagged or banned. If you're planning to archive a lot of Instagram content for an investigation, consider using one of the forensic tools mentioned earlier—they're built to handle these platform restrictions more robustly.</p>
-<p><strong>Downloading playlists</strong></p>
+<h3 id="downloading-playlists">Downloading playlists</h3>
 <p>yt-dlp handles entire playlists or channels without breaking a sweat:</p>
 <p>yt-dlp "https://www.youtube.com/playlist?list=PLAYLIST_ID"</p>
 <p>If you're archiving a channel that's being updated regularly, use the archive feature to track what you've already downloaded:</p>
 <p>yt-dlp --download-archive archive.txt "CHANNEL_URL"</p>
 <p>This creates a text file that records every video ID you've downloaded. Next time you run the same command, it'll skip videos that are already in the archive.</p>
-<p><strong>Audio extraction</strong></p>
+<h3 id="audio-extraction">Audio extraction</h3>
 <p>Sometimes you only need the audio (podcasts, interviews, etc.):</p>
 <p>yt-dlp -x --audio-format mp3 "VIDEO_URL"</p>
 <p><strong>Limitations</strong></p>
 <p>yt-dlp is fantastic for what it does, but it's not forensically robust. It doesn't automatically hash files or provide chain of custody features. If you need that level of documentation, jump ahead to the forensic tools section. For most investigative work, though, yt-dlp combined with good file organization will serve you well.</p>
 <p>The tool is actively maintained and updates frequently to keep up with platform changes. If something breaks, update yt-dlp with yt-dlp -U and try again.</p>
-<p><strong>Where are my downloads?</strong></p>
+<h3 id="where-are-my-downloads">Where are my downloads?</h3>
 <p>That’s a great question! If you’re on a mac, the easiest is to create a new folder somewhere in your investigation main folder, and then right click on it and select “New Terminal at Folder” and run the commands from above there. All your files will be downloaded to that folder.</p>
 <p>On Windows, you can do the same thing: create a folder for your investigation, then shift+right-click inside that folder and select "Open PowerShell window here" (or "Open in Terminal" on Windows 11). Run your yt-dlp commands from there and everything downloads to that folder. On Linux, navigate to your folder in Terminal using cd /path/to/your/folder before running yt-dlp commands.</p>
 <h2 id="forensic-tools">Forensic tools</h2>
@@ -147,5 +149,8 @@
 <p>If you’re afraid that content that is relevant for your investigation may disappear, it makes sense to double your efforts. Submit it for preservation to the Wayback Machine <em>AND</em> download it to your computer.</p>
 <p>Web archiving is a discipline in its own, and this short guide is only showing you the tip of the iceberg. If it turns out that you’re passionate about preservation, you may find <a target="_blank" rel="noopener" href="https://netpreserve.org/web-archiving/training-materials/">this</a> resource interesting for a thorough, almost academic discussion. <a target="_blank" rel="noopener" href="https://github.com/iipc/awesome-web-archiving">This other resource</a> is a huge collection of archiving tools and methods.</p>
 </main>
+<div></div>
+</div>
+<footer class="doc-end"><div class="next"><p>Next worksheet</p><a href="save-to-sheets.html">Installing the Save to Sheets Extension</a></div><div><p>Tools for this</p><a href="../#tool-hrc-archiver">HRC Archiver</a><a href="../#tool-save-to-sheets">Save to Sheets</a></div><div><p>Back to</p><a href="../#preserve">Preserve</a><a href="archiving.docx" download>Download .docx</a></div></footer>
 </body>
 </html>

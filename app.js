@@ -1,18 +1,22 @@
-// Renders the kit from content.json: the stage rail, each stage's worksheets and tools, and the investigations list.
-// Then runs the Lantern hero over the investigations.
+// Renders the kit from content.json: the overview of every stage, the stage rail, each stage's worksheets and
+// tools (linked to each other), and the investigations by year. Then runs the Lantern hero over the investigations.
 const content = await fetch("content.json").then((r) => r.json());
 const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
-const KIND = { browser: "Runs in your browser", extension: "Chrome extension", desktop: "Desktop app" };
+const KIND = { extension: "Chrome extension", desktop: "Desktop app" };
 const TOOLS_DIR = "tools/"; // browser tools are served from here, next to this page
+const toolById = new Map(content.tools.map((t) => [t.id, t]));
+const sheetsFor = (t) => content.worksheets.filter((w) => w.tools?.includes(t.id));
+const linkList = (list, href, name) => list.map((x) => `<a href="${href(x)}">${esc(name(x))}</a>`).join(", ");
 
 const sheet = (w) => `
   <article class="card sheet" id="ws-${w.id}">
-    <p class="meta">Worksheet · ${esc(w.version)}</p>
+    ${w.step ? `<span class="step" title="Suggested starting point ${w.step}">${w.step}</span>` : ""}
     <h4>${esc(w.title)}</h4>
     <p>${esc(w.summary)}</p>
-    <div class="acts"><a class="act primary" href="sheets/${w.id}.html">Read</a><a class="act" href="${encodeURI(w.file)}" download>.docx</a></div>
+    ${w.tools ? `<p class="rel">With ${linkList(w.tools.map((id) => toolById.get(id)), (t) => `#tool-${t.id}`, (t) => t.name)}</p>` : ""}
+    <div class="acts"><a class="act primary" href="sheets/${w.id}.html">Read</a><a class="act" href="${encodeURI(w.file)}" download>.docx</a><span class="date">${esc(w.version)}</span></div>
   </article>`;
 
 const tool = (t) => {
@@ -20,34 +24,54 @@ const tool = (t) => {
   if (t.launch) acts.push(`<a class="act primary" href="${encodeURI(TOOLS_DIR + t.launch)}" target="_blank" rel="noopener">Open tool</a>`);
   if (t.store) acts.push(`<a class="act primary" href="${t.store}" target="_blank" rel="noopener">Add to Chrome</a>`);
   if (t.source) acts.push(`<a class="act${acts.length ? "" : " primary"}" href="${t.source}" target="_blank" rel="noopener">${acts.length ? "Code" : "Get it"} on GitHub</a>`);
+  const taught = sheetsFor(t);
   return `
   <article class="card tool" id="tool-${t.id}">
-    <p class="meta">${KIND[t.kind]}</p>
-    <h4>${esc(t.name)}</h4>
-    <p>${esc(t.summary)}</p>
-    <div class="acts">${acts.join("")}</div>
+    <div class="screen">${t.image ? `<img src="${t.image}" alt="" loading="lazy" width="720" height="450">` : `<span>${KIND[t.kind]}</span>`}</div>
+    <div class="body">
+      <h4>${esc(t.name)}</h4>
+      <p>${esc(t.summary)}</p>
+      ${taught.length ? `<p class="rel">Method in ${linkList(taught, (w) => `#ws-${w.id}`, (w) => w.title)}</p>` : ""}
+      ${t.needs ? `<p class="needs">${esc(t.needs)}</p>` : ""}
+      <div class="acts">${acts.join("")}</div>
+    </div>
   </article>`;
 };
 
-const col = (title, list, render) => list.length ? `<div><h3 class="col-h">${title}</h3><div class="cards">${list.map(render).join("")}</div></div>` : "";
+const group = (cls, list, render) => list.length ? `<div class="cards ${cls}">${list.map(render).join("")}</div>` : "";
+const num = (i) => String(i + 1).padStart(2, "0");
+const byStage = (s) => [content.worksheets.filter((w) => w.stage === s.id), content.tools.filter((t) => t.stage === s.id)];
 
 document.getElementById("stages").innerHTML = content.stages.map((s, i) => {
-  const sheets = content.worksheets.filter((w) => w.stage === s.id), tools = content.tools.filter((t) => t.stage === s.id);
+  const [sheets, tools] = byStage(s);
   return `
   <section class="stage" id="${s.id}" aria-labelledby="${s.id}-h">
     <div class="stage-head">
-      <span class="num">${String(i + 1).padStart(2, "0")}</span>
+      <span class="num">${num(i)}</span>
       <h2 id="${s.id}-h">${esc(s.name)}</h2>
       <p>${esc(s.line)}</p>
     </div>
-    <div class="stage-body">${col("Worksheets", sheets, sheet)}${col("Tools", tools, tool)}</div>
+    ${group("sheets", sheets, sheet)}${group("tools", tools, tool)}
   </section>`;
 }).join("");
 
+// the overview: every stage at once, with what's in it
+document.querySelector(".map").innerHTML = content.stages.map((s, i) => {
+  const [sheets, tools] = byStage(s);
+  return `<li>
+    <a class="map-h" href="#${s.id}"><span>${num(i)}</span>${esc(s.name)}</a>
+    <ul>${sheets.map((w) => `<li class="ws"><a href="#ws-${w.id}">${w.step ? `<b>${w.step}</b>` : ""}${esc(w.title)}</a></li>`).join("")}
+    ${tools.map((t) => `<li class="tl"><a href="#tool-${t.id}">${esc(t.name)}</a></li>`).join("")}</ul>
+  </li>`;
+}).join("");
+
 const rail = document.querySelector(".rail ol");
-rail.innerHTML = content.stages.map((s, i) => `<li><a href="#${s.id}"><span>${String(i + 1).padStart(2, "0")}</span>${esc(s.name)}</a></li>`).join("");
-document.querySelector(".inv").innerHTML = content.investigations
-  .map((v) => `<li><a href="${v.url}" target="_blank" rel="noopener">${esc(v.title)}</a></li>`).join("");
+rail.innerHTML = content.stages.map((s, i) => `<li><a href="#${s.id}"><span>${num(i)}</span>${esc(s.name)}</a></li>`).join("");
+
+const years = [...new Set(content.investigations.map((v) => v.year))].sort((a, b) => b - a);
+document.querySelector(".timeline").innerHTML = years.map((y) => `
+  <section class="year"><h3>${y}</h3><ul>${content.investigations.filter((v) => v.year === y)
+    .map((v) => `<li><a href="${v.url}" target="_blank" rel="noopener">${esc(v.title)}</a></li>`).join("")}</ul></section>`).join("");
 
 // the rail marks the stage in the middle of the screen, and keeps it scrolled into view on phones
 const links = new Map([...rail.querySelectorAll("a")].map((a) => [a.hash.slice(1), a]));
@@ -62,17 +86,11 @@ const spy = new IntersectionObserver((entries) => {
 }, { rootMargin: "-45% 0px -50% 0px" });
 document.querySelectorAll(".stage").forEach((s) => spy.observe(s));
 
-// a faint lantern follows the pointer across the tools
-addEventListener("pointermove", (e) => {
-  const card = e.target.closest?.(".tool");
-  if (!card) return;
-  const r = card.getBoundingClientRect();
-  card.style.setProperty("--mx", `${e.clientX - r.left}px`);
-  card.style.setProperty("--my", `${e.clientY - r.top}px`);
-});
-document.addEventListener("pointerout", (e) => {
-  const card = e.target.closest?.(".tool");
-  if (card && !card.contains(e.relatedTarget)) card.style.setProperty("--my", "-200px");
+// a jump to a card briefly marks it, so it's easy to find among its neighbours
+addEventListener("hashchange", () => {
+  const card = document.getElementById(location.hash.slice(1));
+  if (!card?.classList.contains("card")) return;
+  card.classList.remove("flash"); void card.offsetWidth; card.classList.add("flash");
 });
 
 // ---------- Lantern hero ----------
@@ -181,13 +199,20 @@ function frame(t) {
       if (m === 0) continue;
       c.sx = x; c.sy = y;
       if (c.item) {
-        const over = !auto && m > 0.6 && p.x > x && p.x < x + c.w && Math.abs(p.y - y) < 11 && lit > 0.15;
-        if (over) hot = c;
+        const over = !auto && m > 0.6 && p.x > x - 8 && p.x < x + c.w + 8 && Math.abs(p.y - y) < 13;
         ctx.font = ITEM_FONT;
+        if (over) {
+          // the one under the pointer becomes a tag that reads as a link
+          hot = c;
+          ctx.globalAlpha = m; ctx.fillStyle = C.signal;
+          ctx.beginPath(); ctx.roundRect(x - 10, y - 13, c.w + 38, 26, 13); ctx.fill();
+          ctx.fillStyle = C.ground;
+          ctx.fillText(c.text + "  ↗", x, y);
+          continue;
+        }
         ctx.globalAlpha = (0.12 + lit * 0.88) * m;
         ctx.fillStyle = lit > 0.05 ? C.signal : C.paper;
         ctx.fillText(c.text, x, y);
-        if (over) ctx.fillRect(x, y + 10, c.w, 1.5);
       } else {
         ctx.font = NOISE_FONT;
         ctx.globalAlpha = (0.06 + lit * 0.34) * m;
@@ -216,11 +241,10 @@ addEventListener("pointermove", (e) => {
   const r = canvas.getBoundingClientRect();
   p.x = e.clientX - r.left; p.y = e.clientY - r.top; p.over = p.y >= 0 && p.y <= r.height;
 });
-// a click opens an investigation only where the light already is; elsewhere (and on touch) it brings the
-// light there and sends a pulse out from it
+// a click on an investigation opens it; anywhere else it brings the light there and sends a pulse out from it
 canvas.addEventListener("click", (e) => {
   const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
-  const c = rows.flatMap((row) => row.cells).find((c) => c.item && x > c.sx && x < c.sx + c.w && Math.abs(y - c.sy) < 11);
-  if (c && Math.hypot(x - light.x, y - light.y) < R * 0.6) window.open(c.item.url, "_blank", "noopener");
+  const c = rows.flatMap((row) => row.cells).find((c) => c.item && x > c.sx - 8 && x < c.sx + c.w + 8 && Math.abs(y - c.sy) < 13);
+  if (c) window.open(c.item.url, "_blank", "noopener");
   else { p.x = x; p.y = y; p.over = true; if (!still) pulse(x, y); schedule(); }
 });
