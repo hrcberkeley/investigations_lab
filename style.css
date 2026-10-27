@@ -36,13 +36,14 @@ h1, h2, h3 { font-family: var(--display); font-variation-settings: var(--soft); 
 #field { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: pan-y; }
 .cover h1 { margin: -0.36em 0 0; font-weight: 800; font-size: clamp(3.4rem, 12.6vw, 11.5rem); line-height: 0.86; letter-spacing: -0.04em;
   font-variation-settings: var(--soft), "opsz" 144; pointer-events: none; }
-.cover-foot { display: grid; gap: 24px 40px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); align-items: start;
-  padding: 28px 0 var(--m); }
-.tagline { position: relative; margin: 0; font: italic 400 clamp(1.6rem, 3vw, 2.4rem)/1.1 var(--display); font-variation-settings: var(--soft); }
-.tagline svg { position: absolute; left: 30%; bottom: -12px; width: 62%; height: 14px; }
-.lede { margin: 0; color: var(--ink); max-width: 38rem; font-size: clamp(1.15rem, 1.6vw, 1.4rem); line-height: 1.5; }
-@media (min-width: 900px) { .cover-foot { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) auto; } }
-.cover nav { display: grid; gap: 10px; justify-items: start; font-size: 1.05rem; }
+.cover-foot { display: grid; gap: 28px 56px; align-items: start; padding: 32px 0 var(--m); }
+@media (min-width: 900px) { .cover-foot { grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); } }
+.tagline { margin: 0; font: italic 400 clamp(1.6rem, 3vw, 2.4rem)/1.15 var(--display); font-variation-settings: var(--soft); }
+/* the underline belongs to "looking carefully", so it follows those words wherever the line breaks */
+.tagline span { position: relative; white-space: nowrap; }
+.tagline svg { position: absolute; left: -2%; bottom: -0.3em; width: 104%; height: 14px; }
+.lede { margin: 0 0 22px; max-width: 40rem; font: 400 clamp(1.3rem, 2.1vw, 1.8rem)/1.32 var(--display); font-variation-settings: var(--soft); }
+.cover nav { display: flex; flex-wrap: wrap; gap: 10px 32px; font-size: 1.05rem; }
 
 /* ---------- intro ---------- */
 main > section { max-width: 90rem; margin: 0 auto; padding-inline: var(--m); }

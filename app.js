@@ -183,7 +183,7 @@ function layoutField() {
   [crisp, ghost, dots, lens] = Array.from({ length: 4 }, () => canvasOf(W * D, H * D));
   const c = crisp.getContext("2d");
   c.scale(D, D);
-  const fs = Math.max(16, Math.min(32, W / 40)), lh = fs * 1.12, gap = fs * 0.28;
+  const fs = Math.max(16, Math.min(32, W / 40)), lh = fs * 1.75, gap = fs * 0.28;
   c.font = `italic 700 ${fs}px Fraunces`;
   c.fillStyle = INK.black;
   const items = [...content.investigations].sort(() => Math.random() - 0.5);
