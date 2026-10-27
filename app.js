@@ -183,17 +183,17 @@ function layoutField() {
   [crisp, ghost, dots, lens] = Array.from({ length: 4 }, () => canvasOf(W * D, H * D));
   const c = crisp.getContext("2d");
   c.scale(D, D);
-  const fs = Math.max(26, Math.min(60, W / 19)), lh = fs * 1.06, gap = fs * 0.28;
+  const fs = Math.max(16, Math.min(32, W / 40)), lh = fs * 1.12, gap = fs * 0.28;
   c.font = `italic 700 ${fs}px Fraunces`;
   c.fillStyle = INK.black;
   const items = [...content.investigations].sort(() => Math.random() - 0.5);
   words = [];
-  let x = -fs * 2 * Math.random(), y = fs * 0.85, k = 0;
+  let x = 0, y = fs * 0.85, k = 0;
   while (y < H + fs) {
     const it = items[k++ % items.length];
     for (const w of [...it.title.split(" "), "/"]) {
       const ww = c.measureText(w).width;
-      if (x + ww > W + fs * 3) { x = -fs * 1.5 * Math.random(); y += lh; }
+      if (x + ww > W) { x = 0; y += lh; }
       c.fillText(w, x, y);
       if (w !== "/") words.push({ x, y: y - fs * 0.78, w: ww, h: fs, item: it });
       x += ww + gap;
@@ -205,7 +205,7 @@ function layoutField() {
   g.fillStyle = INK.red; g.fillRect(0, 0, ghost.width, ghost.height);
   const dc = dots.getContext("2d");
   dc.scale(D, D);
-  halftone(dc, blurred(crisp, W, H, crisp.width, crisp.height, 2.2), { cell: 8, color: INK.red, min: 0.75, max: 0.66 });
+  halftone(dc, blurred(crisp, W, H, crisp.width, crisp.height, 2.2), { cell: Math.max(4, fs / 5.5), color: INK.red, min: 0.75, max: 0.66 });
   if (!look.x) { look.x = aim.x = W * 0.3; look.y = aim.y = H * 0.5; }
 }
 

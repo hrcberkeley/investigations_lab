@@ -40,7 +40,8 @@ h1, h2, h3 { font-family: var(--display); font-variation-settings: var(--soft); 
   padding: 28px 0 var(--m); }
 .tagline { position: relative; margin: 0; font: italic 400 clamp(1.6rem, 3vw, 2.4rem)/1.1 var(--display); font-variation-settings: var(--soft); }
 .tagline svg { position: absolute; left: 30%; bottom: -12px; width: 62%; height: 14px; }
-.lede { margin: 0; color: var(--ink-2); max-width: 30rem; }
+.lede { margin: 0; color: var(--ink); max-width: 38rem; font-size: clamp(1.15rem, 1.6vw, 1.4rem); line-height: 1.5; }
+@media (min-width: 900px) { .cover-foot { grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) auto; } }
 .cover nav { display: grid; gap: 10px; justify-items: start; font-size: 1.05rem; }
 
 /* ---------- intro ---------- */
